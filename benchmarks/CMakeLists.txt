@@ -1,0 +1,36 @@
+include_directories(
+	${PROJECT_SOURCE_DIR}
+)
+
+add_executable(benchmark-clear
+	bench_clear.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-composite
+	bench_composite.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-copy
+	bench_copy.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-erase
+	bench_erase.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-eraseall
+	bench_eraseall.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-find
+	bench_find.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-insert
+	bench_insert.cpp
+	bench_utils.cpp
+)
+add_executable(benchmark-iterate
+	bench_iterate.cpp
+	bench_utils.cpp
+)

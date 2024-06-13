@@ -1,0 +1,6 @@
+# VIM
+**.swo
+**.swp
+
+# CMAKE (convenience)
+build*
