@@ -32,7 +32,10 @@
 #ifndef INC_SH__TUPLE_ALGORITHM_HPP
 #define INC_SH__TUPLE_ALGORITHM_HPP
 
-#include "tuple_algorithm.hpp"
+#include <cstddef>
+#include <tuple>
+#include <type_traits>
+#include <utility>
 
 namespace sh::tuple_algorithm
 {

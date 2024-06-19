@@ -16,10 +16,10 @@ sh::flat_set:
 sh::unordered_flat_map:
 	* Similar to C++23's std::flat_map but without the guaranteed ordering.
 	* Doesn't use binary search.
-	* Uses an std::equal-like comparator instead of std::less-like.
+	* Uses an std::equal_to-like comparator instead of std::less-like.
 sh::unordered_flat_set:
 	* Similar to C++23's std::flat_set but without the guaranteed ordering.
 	* Doesn't use binary search.
-	* Uses an std::equal-like comparator instead of std::less-like.
+	* Uses an std::equal_to-like comparator instead of std::less-like.
 
 I hope this is useful or at least interesting!
