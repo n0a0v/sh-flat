@@ -394,10 +394,10 @@ public:
 	const mapped_container_type& values() const;
 
 	// Non-member functions:
-	template <typename Key2, typename Compare2, typename KeyContainer2>
-	friend bool operator==(const flat_map<Key2, Compare2, KeyContainer2>& lhs, const flat_map<Key2, Compare2, KeyContainer2>& rhs);
-	template <typename Key2, typename Compare2, typename KeyContainer2>
-	friend bool operator!=(const flat_map<Key2, Compare2, KeyContainer2>& lhs, const flat_map<Key2, Compare2, KeyContainer2>& rhs);
+	template <typename Key2, typename T2, typename Compare2, typename KeyContainer2, typename MappedContainer2>
+	friend bool operator==(const flat_map<Key2, T2, Compare2, KeyContainer2, MappedContainer2>& lhs, const flat_map<Key2, T2, Compare2, KeyContainer2, MappedContainer2>& rhs);
+	template <typename Key2, typename T2, typename Compare2, typename KeyContainer2, typename MappedContainer2>
+	friend bool operator!=(const flat_map<Key2, T2, Compare2, KeyContainer2, MappedContainer2>& lhs, const flat_map<Key2, T2, Compare2, KeyContainer2, MappedContainer2>& rhs);
 
 private:
 	template <typename KeyIterator>
@@ -1440,12 +1440,14 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::values() const
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 bool operator==(const flat_map<Key, T, Compare, KeyContainer, MappedContainer>& lhs, const flat_map<Key, T, Compare, KeyContainer, MappedContainer>& rhs)
 {
-	return lhs.m_keys == rhs.m_keys;
+	return lhs.m_keys == rhs.m_keys
+		&& lhs.m_values == rhs.m_values;
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 bool operator!=(const flat_map<Key, T, Compare, KeyContainer, MappedContainer>& lhs, const flat_map<Key, T, Compare, KeyContainer, MappedContainer>& rhs)
 {
-	return operator==(lhs, rhs) == false;
+	return lhs.m_keys != rhs.m_keys
+		|| lhs.m_values != rhs.m_values;
 }
 
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>

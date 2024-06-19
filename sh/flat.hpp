@@ -80,13 +80,13 @@ namespace sh
 	template <typename T, typename Alloc> struct has_convertible_allocator_type<T, Alloc,
 		std::void_t<typename T::allocator_type>
 	>
-    {
-        static constexpr bool value = std::is_convertible_v<Alloc, typename T::allocator_type>;
-    };
+	{
+		static constexpr bool value = std::is_convertible_v<Alloc, typename T::allocator_type>;
+	};
 	/**	Check if a given type has an allocator_type convertible to given allocator type.
 	 */
 	template <typename T, typename Alloc> constexpr bool has_convertible_allocator_type_v
-        = has_convertible_allocator_type<T, Alloc>::value;
+		= has_convertible_allocator_type<T, Alloc>::value;
 
 	/**	Check if a given type has an allocator_type convertible from a given type of allocator.
 	 *	@tparam T The type that could have a T::allocator_type.

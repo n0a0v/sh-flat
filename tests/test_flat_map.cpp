@@ -1231,3 +1231,141 @@ TEST(sh_flat_map, equal_range)
 		EXPECT_EQ(range.first->second, "two");
 	}
 }
+TEST(sh_flat_map, operator_equal)
+{
+	flat_map<int, std::string> x = {
+		{ 2, "two" },
+		{ 3, "three" },
+		{ 4, "four" },
+		{ 1, "one" },
+	};
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_TRUE(x == y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 4, "four" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "ONE" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+}
+TEST(sh_flat_map, operator_nonequal)
+{
+	flat_map<int, std::string> x = {
+		{ 2, "two" },
+		{ 3, "three" },
+		{ 4, "four" },
+		{ 1, "one" },
+	};
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_FALSE(x != y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 4, "four" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		flat_map<int, std::string> y = {
+			sorted_unique,
+			{
+				{ 1, "ONE" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 4, "four" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+}

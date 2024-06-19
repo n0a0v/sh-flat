@@ -1230,3 +1230,141 @@ TEST(sh_unordered_flat_map, equal_range)
 		EXPECT_EQ(range.first->second, "two");
 	}
 }
+TEST(sh_unordered_flat_map, operator_equal)
+{
+	unordered_flat_map<int, std::string> x = {
+		{ 1, "one" },
+		{ 2, "two" },
+		{ 3, "three" },
+		{ 4, "four" },
+	};
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+			}
+		};
+		EXPECT_TRUE(x == y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "ONE" },
+				{ 2, "two" },
+				{ 3, "three" },
+			}
+		};
+		EXPECT_FALSE(x == y);
+	}
+}
+TEST(sh_unordered_flat_map, operator_nonequal)
+{
+	unordered_flat_map<int, std::string> x = {
+		{ 1, "one" },
+		{ 2, "two" },
+		{ 3, "three" },
+		{ 4, "four" },
+	};
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+			}
+		};
+		EXPECT_FALSE(x != y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "one" },
+				{ 2, "two" },
+				{ 3, "three" },
+				{ 5, "five" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+	{
+		unordered_flat_map<int, std::string> y = {
+			unsorted_unique,
+			{
+				{ 4, "four" },
+				{ 1, "ONE" },
+				{ 2, "two" },
+				{ 3, "three" },
+			}
+		};
+		EXPECT_TRUE(x != y);
+	}
+}

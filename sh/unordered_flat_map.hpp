@@ -394,10 +394,10 @@ public:
 	const mapped_container_type& values() const;
 
 	// Non-member functions:
-	template <typename Key2, typename Compare2, typename KeyContainer2>
-	friend bool operator==(const unordered_flat_map<Key2, Compare2, KeyContainer2>& lhs, const unordered_flat_map<Key2, Compare2, KeyContainer2>& rhs);
-	template <typename Key2, typename Compare2, typename KeyContainer2>
-	friend bool operator!=(const unordered_flat_map<Key2, Compare2, KeyContainer2>& lhs, const unordered_flat_map<Key2, Compare2, KeyContainer2>& rhs);
+	template <typename Key2, typename T2, typename KeyEqual2, typename KeyContainer2, typename MappedContainer2>
+	friend bool operator==(const unordered_flat_map<Key2, T2, KeyEqual2, KeyContainer2, MappedContainer2>& lhs, const unordered_flat_map<Key2, T2, KeyEqual2, KeyContainer2, MappedContainer2>& rhs);
+	template <typename Key2, typename T2, typename KeyEqual2, typename KeyContainer2, typename MappedContainer2>
+	friend bool operator!=(const unordered_flat_map<Key2, T2, KeyEqual2, KeyContainer2, MappedContainer2>& lhs, const unordered_flat_map<Key2, T2, KeyEqual2, KeyContainer2, MappedContainer2>& rhs);
 
 private:
 	template <typename KeyIterator>
@@ -407,7 +407,7 @@ private:
 	template <typename K, typename... Args>
 	std::pair<iterator, bool> do_transparent_emplace_back_if_unique(K&& key_arg, Args&&... args);
 	template <typename InputIterator>
-	void do_insert_back_with_checking_if_unique(InputIterator first, InputIterator last);
+	void do_insert_back_without_checking_if_unique(InputIterator first, InputIterator last);
 
 	constexpr key_equal& get_equal() noexcept;
 	constexpr const key_equal& get_equal() const noexcept;
@@ -581,7 +581,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	, m_values{}
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(first, last);
+	do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 template <typename InputIterator, typename Allocator, typename, typename>
@@ -591,7 +591,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	, m_values{ alloc }
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(first, last);
+	do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 template <typename InputIterator, typename Allocator, typename, typename>
@@ -601,7 +601,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	, m_values{ alloc }
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(first, last);
+	do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_flat_map(std::initializer_list<value_type> init, const key_equal& eq)
@@ -647,7 +647,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(begin(init), end(init));
+	do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 template <typename Allocator, typename>
@@ -659,7 +659,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(begin(init), end(init));
+	do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 template <typename Allocator, typename>
@@ -671,7 +671,7 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_with_checking_if_unique(begin(init), end(init));
+	do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
@@ -1276,13 +1276,15 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::values
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 bool operator==(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& lhs, const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& rhs)
 {
+	using std::get;
 	if (lhs.size() != rhs.size())
 	{
 		return false;
 	}
 	for (const auto& [key, value] : lhs)
 	{
-		if (rhs.contains(key) == false)
+		const auto it = rhs.find(key);
+		if (it == rhs.end() || (value == get<1>(*it)) == false)
 		{
 			return false;
 		}
@@ -1292,7 +1294,20 @@ bool operator==(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedC
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 bool operator!=(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& lhs, const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& rhs)
 {
-	return operator==(lhs, rhs) == false;
+	using std::get;
+	if (lhs.size() != rhs.size())
+	{
+		return true;
+	}
+	for (const auto& [key, value] : lhs)
+	{
+		const auto it = rhs.find(key);
+		if (it == rhs.end() || value != get<1>(*it))
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
@@ -1317,7 +1332,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_fin
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename InputIterator>
-void unordered_flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_insert_back_with_checking_if_unique(InputIterator first, const InputIterator last)
+void unordered_flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_insert_back_without_checking_if_unique(InputIterator first, const InputIterator last)
 {
 	if constexpr (has_reserve_v<key_container_type> && has_reserve_v<mapped_container_type>)
 	{
