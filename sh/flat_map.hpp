@@ -98,14 +98,14 @@ public:
 	flat_map();
 	flat_map(const flat_map& other);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		const flat_map& other,
 		const Allocator& alloc);
 	flat_map(flat_map&& other);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		flat_map&& other,
@@ -115,14 +115,14 @@ public:
 		mapped_container_type mapped_cont,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		const key_container_type& key_cont,
 		const mapped_container_type& mapped_cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		const key_container_type& key_cont,
@@ -134,7 +134,7 @@ public:
 		const key_container_type& key_cont,
 		const mapped_container_type& mapped_cont);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -142,7 +142,7 @@ public:
 		const mapped_container_type& mapped_cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -152,23 +152,23 @@ public:
 		const Allocator& alloc);
 	explicit flat_map(const key_compare& comp);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(const key_compare& comp, const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	explicit flat_map(const Allocator& alloc);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	flat_map(
 		InputIterator first,
 		InputIterator last,
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator, typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		InputIterator first,
@@ -176,15 +176,15 @@ public:
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		InputIterator first,
 		InputIterator last,
 		const Allocator& alloc);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	flat_map(
 		sorted_unique_t,
@@ -192,8 +192,8 @@ public:
 		InputIterator last,
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator, typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -202,8 +202,8 @@ public:
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -214,14 +214,14 @@ public:
 		std::initializer_list<value_type> init,
 		 const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		std::initializer_list<value_type> init,
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		std::initializer_list<value_type> init,
@@ -230,7 +230,7 @@ public:
 		std::initializer_list<value_type> init,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -238,7 +238,7 @@ public:
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<key_container_type, Allocator> && uses_allocator_v<mapped_container_type, Allocator>>
 	>
 	flat_map(
 		sorted_unique_t,
@@ -297,11 +297,11 @@ public:
 	template <typename M> iterator insert_or_assign(const_iterator hint, const key_type& key_arg, M&& mapped_arg);
 	template <typename M> iterator insert_or_assign(const_iterator hint, key_type&& key_arg, M&& mapped_arg);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	void insert(InputIterator first, InputIterator last);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	void insert(sorted_unique_t, InputIterator first, InputIterator last);
 	void insert(std::initializer_list<value_type> init);
@@ -434,7 +434,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const flat_ma
 	, m_values{ other.m_values }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const flat_map& other, const Allocator& alloc)
 	: key_compare{ other.get_less() }
 	, m_keys{ other.m_keys, alloc }
@@ -447,7 +447,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(flat_map&& ot
 	, m_values{ std::move(other.m_values) }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(flat_map&& other, const Allocator& alloc)
 	: key_compare{ std::move(other.get_less()) }
 	, m_keys{ std::move(other.m_keys), alloc }
@@ -465,7 +465,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(key_container
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const key_container_type& key_cont, const mapped_container_type& mapped_cont, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ key_cont, alloc }
@@ -477,7 +477,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const key_con
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const key_container_type& key_cont, const mapped_container_type& mapped_cont, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ key_cont, alloc }
@@ -504,7 +504,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, const key_container_type& key_cont, const mapped_container_type& mapped_cont, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ key_cont, alloc }
@@ -520,7 +520,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, const key_container_type& key_cont, const mapped_container_type& mapped_cont, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ key_cont, alloc }
@@ -542,21 +542,21 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const key_com
 	, m_values{ }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
 	, m_values{ alloc }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
 	, m_values{ alloc }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename>
+template <typename InputIterator, typename HasIteratorCategory>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIterator first, const InputIterator last, const key_compare& comp)
 	: key_compare{ comp }
 	, m_keys{}
@@ -566,7 +566,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIt
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIterator first, const InputIterator last, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
@@ -576,7 +576,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIt
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIterator first, const InputIterator last, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
@@ -586,7 +586,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const InputIt
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename>
+template <typename InputIterator, typename HasIteratorCategory>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, const InputIterator first, const InputIterator last, const key_compare& comp)
 	: key_compare{ comp }
 	, m_keys{}
@@ -602,7 +602,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, const InputIterator first, const InputIterator last, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
@@ -618,7 +618,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, const InputIterator first, const InputIterator last, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
@@ -650,7 +650,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initiali
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initializer_list<value_type> init, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
@@ -667,7 +667,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initiali
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initializer_list<value_type> init, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
@@ -699,7 +699,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, std::initializer_list<value_type> init, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
@@ -714,7 +714,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique_t, std::initializer_list<value_type> init, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
@@ -1027,7 +1027,7 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const Inpu
 	m_values.erase(get<1>(iter), end(m_values));
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-template <typename InputIterator, typename>
+template <typename InputIterator, typename HasIteratorCategory>
 void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const sorted_unique_t, InputIterator first, const InputIterator last)
 {
 	using std::begin;

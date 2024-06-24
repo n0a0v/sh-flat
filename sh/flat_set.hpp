@@ -68,14 +68,14 @@ public:
 	flat_set();
 	flat_set(const flat_set& other);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		const flat_set& other,
 		const Allocator& alloc);
 	flat_set(flat_set&& other);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		flat_set&& other,
@@ -84,13 +84,13 @@ public:
 		container_type cont,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		const container_type& cont,
@@ -101,14 +101,14 @@ public:
 		container_type cont,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
@@ -118,18 +118,18 @@ public:
 	explicit flat_set(
 		const key_compare& comp);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	explicit flat_set(
 		const Allocator& alloc);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	flat_set(
 		InputIterator first,
@@ -137,8 +137,8 @@ public:
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator,
 		typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		InputIterator first,
@@ -147,15 +147,15 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator,
 		typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		InputIterator first,
 		InputIterator last,
 		const Allocator& alloc);
 	template <typename InputIterator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
 	>
 	flat_set(
 		sorted_unique_t,
@@ -164,8 +164,8 @@ public:
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator,
 		typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
@@ -175,8 +175,8 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator,
 		typename Allocator,
-		typename = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
@@ -187,14 +187,14 @@ public:
 		std::initializer_list<value_type> init,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		std::initializer_list<value_type> init,
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		std::initializer_list<value_type> init,
@@ -204,7 +204,7 @@ public:
 		std::initializer_list<value_type> init,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
@@ -212,7 +212,7 @@ public:
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
 	>
 	flat_set(
 		sorted_unique_t,
@@ -341,7 +341,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(const flat_set& other)
 	, m_keys{ other.m_keys }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(const flat_set& other, const Allocator& alloc)
 	: key_compare{ other.get_less() }
 	, m_keys{ other.m_keys, alloc }
@@ -352,7 +352,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(flat_set&& other)
 	, m_keys{ std::move(other.m_keys) }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(flat_set&& other, const Allocator& alloc)
 	: key_compare{ std::move(other.get_less()) }
 	, m_keys{ std::move(other.m_keys), alloc }
@@ -365,7 +365,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(container_type cont, const key_co
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(const container_type& cont, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ cont, alloc }
@@ -373,7 +373,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(const container_type& cont, const
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(const container_type& cont, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ cont, alloc }
@@ -386,13 +386,13 @@ flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, container_type c
 	, m_keys{ std::move(cont) }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, const container_type& cont, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ cont, alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, const container_type& cont, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ cont, alloc }
@@ -403,19 +403,19 @@ flat_set<Key, Compare, KeyContainer>::flat_set(const key_compare& comp)
 	, m_keys{ }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename>
+template <typename InputIterator, typename HasIteratorCategory>
 flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterator last, const key_compare& comp)
 	: key_compare{ comp }
 	, m_keys{ first, last }
@@ -423,7 +423,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterato
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterator last, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ first, last, alloc }
@@ -431,7 +431,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterato
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterator last, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ first, last, alloc }
@@ -439,19 +439,19 @@ flat_set<Key, Compare, KeyContainer>::flat_set(InputIterator first, InputIterato
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename>
+template <typename InputIterator, typename HasIteratorCategory>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, InputIterator first, InputIterator last, const key_compare& comp)
 	: key_compare{ comp }
 	, m_keys{ first, last }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, InputIterator first, InputIterator last, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ first, last, alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename InputIterator, typename Allocator, typename, typename>
+template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, InputIterator first, InputIterator last, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ first, last, alloc }
@@ -464,7 +464,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(std::initializer_list<value_type>
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(std::initializer_list<value_type> init, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ std::move(init), alloc }
@@ -472,7 +472,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(std::initializer_list<value_type>
 	sort_containers_and_erase_duplicates();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(std::initializer_list<value_type> init, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ std::move(init), alloc }
@@ -485,13 +485,13 @@ flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, std::initializer
 	, m_keys{ std::move(init) }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, std::initializer_list<value_type> init, const key_compare& comp, const Allocator& alloc)
 	: key_compare{ comp }
 	, m_keys{ std::move(init), alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename Allocator, typename>
+template <typename Allocator, typename UsesAllocator>
 flat_set<Key, Compare, KeyContainer>::flat_set(sorted_unique_t, std::initializer_list<value_type> init, const Allocator& alloc)
 	: key_compare{}
 	, m_keys{ std::move(init), alloc }
