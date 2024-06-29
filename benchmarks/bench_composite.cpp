@@ -116,23 +116,34 @@ private:
 	map_type m_template;
 };
 
+struct composite_caller final
+{
+	template <typename KeyType, typename MappedType>
+	void operator()() const
+	{
+		std::size_t index = 0;
+		for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
+		{
+			const composite_parameters param
+			{
+				/* repetitions: */ 16,
+				/* operations:  */ 16'000,
+				/* reserve:     */ size,
+				/* key modulo:  */ 0,
+				/* fill size:   */ size,
+				/* fill skip:   */ 0,
+				/* insert: */      2,
+				/* find:   */      12,
+				/* erase:  */      2,
+			};
+			std::cout << '#' << index++ << ": ";
+			bench::test_group<bench::map_result, composite_parameters> g{ param };
+			bench::test_map_permutations<composite_tester, KeyType, MappedType>(g);
+		}
+	}
+};
+
 int main()
 {
-	for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
-	{
-		const composite_parameters param
-		{
-			/* repetitions: */ 16,
-			/* operations:  */ 16'000,
-			/* reserve:     */ size,
-			/* key modulo:  */ 0,
-			/* fill size:   */ size,
-			/* fill skip:   */ 0,
-			/* insert: */      2,
-			/* find:   */      12,
-			/* erase:  */      2,
-		};
-		bench::test_group<bench::map_result, composite_parameters> g{ param };
-		bench::test_common_map_permutations<composite_tester>(g);
-	}
+	bench::for_each_common_map_permutation(composite_caller{});
 }

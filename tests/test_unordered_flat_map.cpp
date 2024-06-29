@@ -535,10 +535,11 @@ TEST(sh_unordered_flat_map, begin_end)
 	int value_sum = 0;
 	for (auto it = x.begin(); it != x.end(); ++it)
 	{
-		static_assert(std::is_const_v<std::remove_reference_t<decltype(it->first)>>, "iterator key expected to be read-only");
-		static_assert(false == std::is_const_v<std::remove_reference_t<decltype(it->second)>>, "iterator value expected to be mutable");
-		key_sum += it->first;
-		for (const char c : it->second)
+		using std::get;
+		static_assert(std::is_const_v<std::remove_reference_t<decltype(get<0>(*it))>>, "iterator key expected to be read-only");
+		static_assert(false == std::is_const_v<std::remove_reference_t<decltype(get<1>(*it))>>, "iterator value expected to be mutable");
+		key_sum += get<0>(*it);
+		for (const char c : get<1>(*it))
 		{
 			value_sum += c - 'a';
 		}
@@ -559,9 +560,10 @@ TEST(sh_unordered_flat_map, cbegin_cend)
 	int value_sum = 0;
 	for (auto it = x.cbegin(); it != x.cend(); ++it)
 	{
-		static_assert(std::is_const_v<std::remove_reference_t<decltype(it->second)>>, "dereferenced const_iterator value expected to be read-only");
-		key_sum += it->first;
-		for (const char c : it->second)
+		using std::get;
+		static_assert(std::is_const_v<std::remove_reference_t<decltype(get<1>(*it))>>, "dereferenced const_iterator value expected to be read-only");
+		key_sum += get<0>(*it);
+		for (const char c : get<1>(*it))
 		{
 			value_sum += c - 'a';
 		}
@@ -617,72 +619,76 @@ TEST(sh_unordered_flat_map, swap)
 }
 TEST(sh_unordered_flat_map, insert_copy)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	{
 		const std::pair<int, std::string> value(1, "one");
 		const auto it = x.insert(value);
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		const std::pair<int, std::string> value(1, "ONE");
 		const auto it = x.insert(value);
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 }
 TEST(sh_unordered_flat_map, insert_hint_copy)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	auto hint = x.insert({ 0, "hint" }).first;
 	{
 		const std::pair<int, std::string> value(1, "one");
 		const auto it = hint = x.insert(hint, value);
-		EXPECT_EQ(it->first, 1);
-		EXPECT_EQ(it->second, "one");
+		EXPECT_EQ(get<0>(*it), 1);
+		EXPECT_EQ(get<1>(*it), "one");
 	}
 	{
 		const std::pair<int, std::string> value(1, "ONE");
 		const auto it = x.insert(hint, value);
-		EXPECT_EQ(it->first, 1);
-		EXPECT_EQ(it->second, "one");
+		EXPECT_EQ(get<0>(*it), 1);
+		EXPECT_EQ(get<1>(*it), "one");
 	}
 }
 TEST(sh_unordered_flat_map, insert_move)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	{
 		std::pair<int, std::string> value(1, "one");
 		const auto it = x.insert(std::move(value));
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		std::pair<int, std::string> value(1, "ONE");
 		const auto it = x.insert(std::move(value));
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 }
 TEST(sh_unordered_flat_map, insert_hint_move)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	auto hint = x.insert({ 0, "hint" }).first;
 	{
 		std::pair<int, std::string> value(1, "one");
 		const auto it = hint = x.insert(hint, std::move(value));
-		EXPECT_EQ(it->first, 1);
-		EXPECT_EQ(it->second, "one");
+		EXPECT_EQ(get<0>(*it), 1);
+		EXPECT_EQ(get<1>(*it), "one");
 	}
 	{
 		std::pair<int, std::string> value(1, "ONE");
 		const auto it = x.insert(hint, std::move(value));
-		EXPECT_EQ(it->first, 1);
-		EXPECT_EQ(it->second, "one");
+		EXPECT_EQ(get<0>(*it), 1);
+		EXPECT_EQ(get<1>(*it), "one");
 	}
 }
 TEST(sh_unordered_flat_map, insert_first_last)
@@ -779,35 +785,37 @@ TEST(sh_unordered_flat_map, insert_sorted_unique_initializer_list)
 }
 TEST(sh_unordered_flat_map, insert_or_assign)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	{
 		const auto it = x.insert_or_assign(1, "one");
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		const auto it = x.insert_or_assign(1, "one!");
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one!");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one!");
 	}
 
 	const auto hint = x.insert_or_assign(2, "two");
 	{
 		const auto it = x.insert_or_assign(hint.first, 3, "three");
-		EXPECT_EQ(it->first, 3);
-		EXPECT_EQ(it->second, "three");
+		EXPECT_EQ(get<0>(*it), 3);
+		EXPECT_EQ(get<1>(*it), "three");
 	}
 	{
 		const auto it = x.insert_or_assign(hint.first, 3, "three!");
-		EXPECT_EQ(it->first, 3);
-		EXPECT_EQ(it->second, "three!");
+		EXPECT_EQ(get<0>(*it), 3);
+		EXPECT_EQ(get<1>(*it), "three!");
 	}
 	EXPECT_EQ(x.size(), 3u);
 }
 TEST(sh_unordered_flat_map, insert_or_assign_transparent)
 {
+	using std::get;
 	std::uint32_t compared_normally = 0, compared_transparently = 0;
 	unordered_flat_map<int, std::string, equal_to_transparent<int>> x
 	{
@@ -816,20 +824,21 @@ TEST(sh_unordered_flat_map, insert_or_assign_transparent)
 	{
 		const auto it = x.insert_or_assign(1, "one");
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		const auto it = x.insert_or_assign(static_cast<unsigned short>(1), "one!");
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one!");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one!");
 	}
 	ASSERT_EQ(0u, compared_normally);
 	ASSERT_LE(1u, compared_transparently);
 }
 TEST(sh_unordered_flat_map, insert_or_assign_hint_transparent)
 {
+	using std::get;
 	std::uint32_t compared_normally = 0, compared_transparently = 0;
 	unordered_flat_map<int, std::string, equal_to_transparent<int>> x
 	{
@@ -838,30 +847,31 @@ TEST(sh_unordered_flat_map, insert_or_assign_hint_transparent)
 	const auto hint = x.insert_or_assign(2, "two");
 	{
 		const auto it = x.insert_or_assign(hint.first, 3, "three");
-		EXPECT_EQ(it->first, 3);
-		EXPECT_EQ(it->second, "three");
+		EXPECT_EQ(get<0>(*it), 3);
+		EXPECT_EQ(get<1>(*it), "three");
 	}
 	{
 		const auto it = x.insert_or_assign(hint.first, static_cast<unsigned short>(3), "three!");
-		EXPECT_EQ(it->first, 3);
-		EXPECT_EQ(it->second, "three!");
+		EXPECT_EQ(get<0>(*it), 3);
+		EXPECT_EQ(get<1>(*it), "three!");
 	}
 	ASSERT_LE(1u, compared_transparently);
 }
 TEST(sh_unordered_flat_map, emplace)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	{
 		const auto it = x.emplace(1, "one");
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		const auto it = x.emplace(1, "one!");
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	ASSERT_EQ(x.size(), 1u);
 }
@@ -886,34 +896,36 @@ TEST(sh_unordered_flat_map, emplace_transparent)
 }
 TEST(sh_unordered_flat_map, emplace_hint)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 
 	const auto hint = x.try_emplace(1, "one");
 	ASSERT_TRUE(hint.second);
-	EXPECT_EQ(hint.first->first, 1);
-	EXPECT_EQ(hint.first->second, "one");
+	EXPECT_EQ(get<0>(*hint.first), 1);
+	EXPECT_EQ(get<1>(*hint.first), "one");
 
 	{
 		const auto it = x.emplace_hint(hint.first, 2, "two");
-		EXPECT_EQ(it->first, 2);
-		EXPECT_EQ(it->second, "two");
+		EXPECT_EQ(get<0>(*it), 2);
+		EXPECT_EQ(get<1>(*it), "two");
 	}
 	ASSERT_EQ(x.size(), 2u);
 }
 TEST(sh_unordered_flat_map, try_emplace)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 	{
 		const auto it = x.try_emplace(1, "one");
 		EXPECT_TRUE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
 		const auto it = x.try_emplace(1, "one!");
 		EXPECT_FALSE(it.second);
-		EXPECT_EQ(it.first->first, 1);
-		EXPECT_EQ(it.first->second, "one");
+		EXPECT_EQ(get<0>(*it.first), 1);
+		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	ASSERT_EQ(x.size(), 1u);
 }
@@ -938,22 +950,24 @@ TEST(sh_unordered_flat_map, try_emplace_transparent)
 }
 TEST(sh_unordered_flat_map, try_emplace_hint)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x;
 
 	const auto hint = x.try_emplace(1, "one");
 	ASSERT_TRUE(hint.second);
-	EXPECT_EQ(hint.first->first, 1);
-	EXPECT_EQ(hint.first->second, "one");
+	EXPECT_EQ(get<0>(*hint.first), 1);
+	EXPECT_EQ(get<1>(*hint.first), "one");
 
 	{
 		const auto it = x.try_emplace(hint.first, 2, "two");
-		EXPECT_EQ(it->first, 2);
-		EXPECT_EQ(it->second, "two");
+		EXPECT_EQ(get<0>(*it), 2);
+		EXPECT_EQ(get<1>(*it), "two");
 	}
 	ASSERT_EQ(x.size(), 2u);
 }
 TEST(sh_unordered_flat_map, erase)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x = {
 		{ 1, "one" },
 		{ 2, "two" },
@@ -970,7 +984,7 @@ TEST(sh_unordered_flat_map, erase)
 	ASSERT_NE(it, x.end());
 	while (it != x.end())
 	{
-		sum += it->first;
+		sum += get<0>(*it);
 		++count;
 		it = x.erase(it);
 
@@ -981,7 +995,7 @@ TEST(sh_unordered_flat_map, erase)
 	ASSERT_FALSE(x.empty());
 
 	it = x.begin();
-	sum += it->first;
+	sum += get<0>(*it);
 	++count;
 	it = x.erase(it);
 	ASSERT_EQ(it, x.end());
@@ -1011,6 +1025,7 @@ TEST(sh_unordered_flat_map, erase_transparent)
 }
 TEST(sh_unordered_flat_map, erase_range)
 {
+	using std::get;
 	unordered_flat_map<std::size_t, std::size_t> x;
 
 	constexpr std::size_t min = 47;
@@ -1023,9 +1038,9 @@ TEST(sh_unordered_flat_map, erase_range)
 	ASSERT_EQ(x.size(), size);
 
 	const auto first = std::next(x.begin());
-	const auto front_key = x.begin()->first;
+	const auto front_key = get<0>(*x.begin());
 	const auto last = std::prev(x.end());
-	const auto back_key = last->first;
+	const auto back_key = get<0>(*last);
 	auto result = x.erase(first, last);
 
 	ASSERT_FALSE(x.empty());
@@ -1206,6 +1221,7 @@ TEST(sh_unordered_flat_map, find_transparent)
 }
 TEST(sh_unordered_flat_map, equal_range)
 {
+	using std::get;
 	unordered_flat_map<int, std::string> x = {
 		{ 1, "one" },
 		{ 2, "two" },
@@ -1226,8 +1242,8 @@ TEST(sh_unordered_flat_map, equal_range)
 		EXPECT_NE(range.first, range.second);
 		EXPECT_NE(range.first, x.end());
 		ASSERT_NE(range.first, x.end());
-		EXPECT_EQ(range.first->first, 2);
-		EXPECT_EQ(range.first->second, "two");
+		EXPECT_EQ(get<0>(*range.first), 2);
+		EXPECT_EQ(get<1>(*range.first), "two");
 	}
 }
 TEST(sh_unordered_flat_map, operator_equal)

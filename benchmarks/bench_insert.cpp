@@ -77,20 +77,33 @@ private:
 	bench::random m_random;
 };
 
+struct insert_caller final
+{
+	template <typename KeyType, typename MappedType>
+	void operator()() const
+	{
+		std::size_t index = 0;
+		for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
+		{
+			const insert_parameters param
+			{
+				/* repetitions: */ 32,
+				/* operations:  */ size,
+				/* reserve:     */ (size * 4) / 3,
+				/* key modulo:  */ 0,
+				/* fill size:   */ size,
+				/* fill skip:   */ 4
+			};
+			std::cout << '#' << index++ << ": ";
+			bench::map_test_group g{ param };
+			bench::test_map_permutations<insert_tester, KeyType, MappedType>(g);
+		}
+	}
+};
+
 int main()
 {
-	for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
-	{
-		const insert_parameters param
-		{
-			/* repetitions: */ 32,
-			/* operations:  */ size,
-			/* reserve:     */ (size * 4) / 3,
-			/* key modulo:  */ 0,
-			/* fill size:   */ size,
-			/* fill skip:   */ 4
-		};
-		bench::map_test_group g{ param };
-		bench::test_common_map_permutations<insert_tester>(g);
-	}
+
+	bench::for_each_common_map_permutation(insert_caller{});
+
 }

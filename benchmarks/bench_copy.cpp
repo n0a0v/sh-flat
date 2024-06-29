@@ -78,20 +78,31 @@ private:
 	map_type m_template;
 };
 
+struct copy_caller final
+{
+	template <typename KeyType, typename MappedType>
+	void operator()() const
+	{
+		std::size_t index = 0;
+		for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
+		{
+			const copy_parameters param
+			{
+				/* repetitions: */ 32,
+				/* operations:  */ 2,
+				/* reserve:     */ size,
+				/* key modulo:  */ 0,
+				/* fill size:   */ size,
+				/* fill skip:   */ 0
+			};
+			std::cout << '#' << index++ << ": ";
+			bench::map_test_group g{ param };
+			bench::test_map_permutations<copy_tester, KeyType, MappedType>(g);
+		}
+	}
+};
+
 int main()
 {
-	for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
-	{
-		const copy_parameters param
-		{
-			/* repetitions: */ 32,
-			/* operations:  */ 2,
-			/* reserve:     */ size,
-			/* key modulo:  */ 0,
-			/* fill size:   */ size,
-			/* fill skip:   */ 0
-		};
-		bench::map_test_group g{ param };
-		bench::test_common_map_permutations<copy_tester>(g);
-	}
+	bench::for_each_common_map_permutation(copy_caller{});
 }

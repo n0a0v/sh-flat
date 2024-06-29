@@ -46,7 +46,9 @@
 
 // Permutations
 #include <map>
+#include <sh/adjacent_flat_map.hpp>
 #include <sh/flat_map.hpp>
+#include <sh/unordered_adjacent_flat_map.hpp>
 #include <sh/unordered_flat_map.hpp>
 #include <unordered_map>
 
@@ -204,12 +206,32 @@ namespace bench
 		}
 	};
 	template <typename Key, typename Mapped, typename Compare, typename Allocator>
+	struct type_name <sh::adjacent_flat_map<Key, Mapped, Compare, Allocator>>
+	{
+		const char* operator()() const
+		{
+			static const std::string instance =
+				(std::ostringstream{} << "sh::adjacent_flat_map<" << type_name<Key>{}() << ", " << type_name<Mapped>{}() << '>').str();
+			return instance.c_str();
+		}
+	};
+	template <typename Key, typename Mapped, typename Compare, typename Allocator>
 	struct type_name <sh::flat_map<Key, Mapped, Compare, Allocator>>
 	{
 		const char* operator()() const
 		{
 			static const std::string instance =
 				(std::ostringstream{} << "sh::flat_map<" << type_name<Key>{}() << ", " << type_name<Mapped>{}() << '>').str();
+			return instance.c_str();
+		}
+	};
+	template <typename Key, typename Mapped, typename KeyEqual, typename Allocator>
+	struct type_name <sh::unordered_adjacent_flat_map<Key, Mapped, KeyEqual, Allocator>>
+	{
+		const char* operator()() const
+		{
+			static const std::string instance =
+				(std::ostringstream{} << "sh::unordered_adjacent_flat_map<" << type_name<Key>{}() << ", " << type_name<Mapped>{}() << '>').str();
 			return instance.c_str();
 		}
 	};
@@ -492,6 +514,11 @@ namespace bench
 		>();
 		g.template add_permutation<
 			Tester<
+				sh::unordered_adjacent_flat_map<KeyType, MappedType, equal_to_counterpart>
+			>
+		>();
+		g.template add_permutation<
+			Tester<
 				sh::unordered_flat_map<KeyType, MappedType, equal_to_counterpart>
 			>
 		>();
@@ -500,26 +527,25 @@ namespace bench
 				sh::flat_map<KeyType, MappedType, less_counterpart>
 			>
 		>();
+		g.template add_permutation<
+			Tester<
+				sh::adjacent_flat_map<KeyType, MappedType, less_counterpart>
+			>
+		>();
 		g.report();
 		g.clear();
 
 		test_map_permutations<Tester, KeyMappedTypes...>(g);
 	}
 
-	template <
-		template <typename Map> class Tester,
-		typename Result, typename Parameters
-	>
-	void test_common_map_permutations(bench::test_group<Result, Parameters>& g)
+	template <typename Object>
+	void for_each_common_map_permutation(Object&& obj)
 	{
 		using big_type = bench::big<std::uint64_t, 12>;
-		test_map_permutations<
-			Tester,
-//			std::uint16_t, std::uint16_t
-//			std::uint32_t, std::uint32_t
-			std::uint64_t, std::uint64_t
-//			std::uint32_t, big_type
-		>(g);
+//		obj.template operator()<std::uint16_t, std::uint16_t>();
+//		obj.template operator()<std::uint32_t, std::uint32_t>();
+		obj.template operator()<std::uint64_t, std::uint64_t>();
+//		obj.template operator()<std::uint32_t, big_type>();
 	}
 } // namespace bench
 

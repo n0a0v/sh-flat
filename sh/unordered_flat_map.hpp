@@ -33,7 +33,7 @@
 #define INC_SH__UNORDERED_FLAT_MAP_HPP
 
 #include "flat.hpp"
-#include "tuple_algorithm.hpp"
+#include "pair_algorithm.hpp"
 
 #include <algorithm>
 #include <initializer_list>
@@ -64,10 +64,10 @@ public:
 	using const_reference = std::pair<const key_type&, const mapped_type&>;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = tuple_algorithm::iterator_tuple<
+	using iterator = pair_algorithm::iterator_pair<
 		decltype(std::begin(std::declval<const key_container_type&>())),
 		decltype(std::begin(std::declval<mapped_container_type&>()))>;
-	using const_iterator = tuple_algorithm::iterator_tuple<
+	using const_iterator = pair_algorithm::iterator_pair<
 		decltype(std::begin(std::declval<const key_container_type&>())),
 		decltype(std::begin(std::declval<const mapped_container_type&>()))>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
@@ -90,7 +90,8 @@ public:
 		{ }
 		bool operator()(const const_reference& lhs, const const_reference& rhs) const
 		{
-			return this->key_equal::operator()(lhs.first, rhs.first);
+			using std::get;
+			return this->key_equal::operator()(get<0>(lhs), get<0>(rhs));
 		}
 	};
 
@@ -463,8 +464,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = tuple_algorithm::iterator_tuple{ begin(key_cont), begin(mapped_cont) };
-	const auto last = tuple_algorithm::iterator_tuple{ end(key_cont), end(mapped_cont) };
+	const auto first = pair_algorithm::iterator_pair{ begin(key_cont), begin(mapped_cont) };
+	const auto last = pair_algorithm::iterator_pair{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -479,8 +480,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = tuple_algorithm::iterator_tuple{ begin(key_cont), begin(mapped_cont) };
-	const auto last = tuple_algorithm::iterator_tuple{ end(key_cont), end(mapped_cont) };
+	const auto first = pair_algorithm::iterator_pair{ begin(key_cont), begin(mapped_cont) };
+	const auto last = pair_algorithm::iterator_pair{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -495,8 +496,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = tuple_algorithm::iterator_tuple{ begin(key_cont), begin(mapped_cont) };
-	const auto last = tuple_algorithm::iterator_tuple{ end(key_cont), end(mapped_cont) };
+	const auto first = pair_algorithm::iterator_pair{ begin(key_cont), begin(mapped_cont) };
+	const auto last = pair_algorithm::iterator_pair{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -761,7 +762,8 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::operator[](K&& key_arg)
 	-> mapped_type&
 {
-	return try_emplace(std::forward<K>(key_arg)).first->second;
+	using std::get;
+	return get<1>(*try_emplace(std::forward<K>(key_arg)).first);
 }
 
 // Iterators:
@@ -960,12 +962,13 @@ template <typename Key, typename T, typename KeyEqual, typename KeyContainer, ty
 template <typename InputIterator, typename HasIteratorCategory>
 void unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::insert(const unsorted_unique_t, InputIterator first, const InputIterator last)
 {
-	using std::next;
 	using std::begin;
+	using std::get;
+	using std::next;
 	// Deduplicate the (fairly) slow way, by checking each element against the
 	// preexisting elements but not newly inserted elements, as they're tagged
 	// unsorted_unique.
-	if constexpr (has_reserve_v<key_container_type> && has_reserve_v<mapped_container_type>)
+	if constexpr (flat::has_reserve_v<key_container_type> && flat::has_reserve_v<mapped_container_type>)
 	{
 		using std::distance;
 		// This intentionally ignores preexisting elements as a rough heuristic
@@ -976,8 +979,8 @@ void unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::insert
 	const size_type pre_insert_size{ m_keys.size() };
 	while (first != last)
 	{
-		const auto last = next(begin(m_keys), pre_insert_size);
-		if (do_find(first->first, begin(m_keys), last) == last)
+		const auto keys_last = next(begin(m_keys), pre_insert_size);
+		if (do_find(get<0>(*first), begin(m_keys), keys_last) == keys_last)
 		{
 			// Desynchronization occurs if m_keys emplaces but m_values throws.
 			m_keys.emplace_back(first->first);
@@ -1067,6 +1070,7 @@ template <typename... Args>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
+	using std::get;
 	if constexpr (sizeof...(args) == 2)
 	{
 		// If possible, keep emplace a transparent operation.
@@ -1075,7 +1079,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::emplac
 	else
 	{
 		value_type value{ std::forward<Args>(args)... };
-		return do_transparent_emplace_back_if_unique(std::move(value.first), std::move(value.second));
+		return do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
@@ -1107,7 +1111,8 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::insert
 	const std::pair<iterator, bool> it_inserted = do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<M>(mapped_arg));
 	if (it_inserted.second == false)
 	{
-		it_inserted.first->second = std::forward<M>(mapped_arg);
+		using std::get;
+		get<1>(*it_inserted.first) = std::forward<M>(mapped_arg);
 	}
 	return it_inserted;
 }
@@ -1342,9 +1347,13 @@ template <typename Key, typename T, typename Compare, typename KeyContainer, typ
 template <typename InputIterator>
 void unordered_flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_insert_back_without_checking_if_unique(InputIterator first, const InputIterator last)
 {
-	if constexpr (has_reserve_v<key_container_type> && has_reserve_v<mapped_container_type>)
+	SH_FLAT_ASSERT(m_keys.empty() && m_values.empty(),
+		"Key & value containers expected to be empty during do_insert_back_without_checking_if_unique.");
+	if constexpr (flat::has_reserve_v<key_container_type> && flat::has_reserve_v<mapped_container_type>)
 	{
 		using std::distance;
+		// This is expected to only call from a constructor, at which point
+		// there are no preexisting elements to include in the reserve size.
 		reserve(distance(first, last));
 	}
 	while (first != last)

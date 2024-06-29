@@ -4,19 +4,29 @@ This implementation requires a C++17 compliant compiler and has been tested
 with:
 	* g++ 12
 	* clang 15
+	* MSVC 2022 (17.11.3)
 
-CMake & binaries are setup for unit testing. Only the headers in the "sh"
-directory are necessary to use the flat map & set implementations. Simply move
-them as a group to a desired directory.
+CMake & binaries are setup for unit testing and benchmarking. Only the headers
+in the "sh" directory are necessary to use the various flat map & set
+implementations. Simply move them as a group to a desired directory.
 
 sh::flat_map:
 	* Like C++23's std::flat_map.
+sh::adjacent_flat_map:
+	* Similar to C++23's std::flat_map, but uses values stored in std::pair (or
+	  similar) in a single container.
 sh::flat_set:
 	* Like C++23's std::flat_set.
 sh::unordered_flat_map:
 	* Similar to C++23's std::flat_map but without the guaranteed ordering.
 	* Doesn't use binary search.
 	* Uses an std::equal_to-like comparator instead of std::less-like.
+sh::unordered_adjacent_flat_map:
+	* Similar to C++23's std::flat_map but without the guaranteed ordering and
+	  uses values stored in std::pair (or similar) in a single container.
+	* Like sh::unordered_flat_map, doesn't use binary search.
+	* Like sh::unordered_flat_map, uses an std::equal_to-like comparator
+	  instead of std::less-like.
 sh::unordered_flat_set:
 	* Similar to C++23's std::flat_set but without the guaranteed ordering.
 	* Doesn't use binary search.

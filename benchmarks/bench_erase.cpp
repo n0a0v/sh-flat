@@ -76,20 +76,31 @@ private:
 	bench::random m_random;
 };
 
+struct erase_caller final
+{
+	template <typename KeyType, typename MappedType>
+	void operator()() const
+	{
+		std::size_t index = 0;
+		for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
+		{
+			const erase_parameters param
+			{
+				/* repetitions: */ 16,
+				/* operations:  */ size,
+				/* reserve:     */ size,
+				/* key modulo:  */ 0,
+				/* fill size:   */ size,
+				/* fill skip:   */ 0
+			};
+			std::cout << '#' << index++ << ": ";
+			bench::map_test_group g{ param };
+			bench::test_map_permutations<erase_tester, KeyType, MappedType>(g);
+		}
+	}
+};
+
 int main()
 {
-	for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
-	{
-		const erase_parameters param
-		{
-			/* repetitions: */ 16,
-			/* operations:  */ size,
-			/* reserve:     */ size,
-			/* key modulo:  */ 0,
-			/* fill size:   */ size,
-			/* fill skip:   */ 0
-		};
-		bench::map_test_group g{ param };
-		bench::test_common_map_permutations<erase_tester>(g);
-	}
+	bench::for_each_common_map_permutation(erase_caller{});
 }

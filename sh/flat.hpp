@@ -43,19 +43,8 @@
 		assert(CONDITION)
 #endif // !SH_FLAT_ASSERT
 
-namespace sh
+namespace sh::flat
 {
-
-	/**	A disambiguation tag for sh::flat_map and sh::flat_set.
-	 *	Denotes that provided arguments are both sorted and unique according to the associated comparator.
-	 */
-	constexpr struct sorted_unique_t {} sorted_unique;
-
-	/**	A disambiguation tag for sh::unordered_flat_map and sh::unordered_flat_set.
-	 *	Denotes that provided arguments are unique (but not necessarily sorted) according to the associated comparator.
-	 */
-	constexpr struct unsorted_unique_t {} unsorted_unique;
-
 	/**	Check if a given type has a reserve function like std::vector's.
 	 *	@tparam T The type to check for a callable T::reserve(size_type) member function.
 	 */
@@ -88,6 +77,71 @@ namespace sh
 	template <typename T, typename Alloc> constexpr bool has_convertible_allocator_type_v
 		= has_convertible_allocator_type<T, Alloc>::value;
 
+	/**	Like std::adjacent_find but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
+	 *	@param first The first iterator in a sorted range [first, last).
+	 *	@param last The last iterator in a sorted range [first, last).
+	 *	@param less A less-than predicate.
+	 *	@return The resulting iterator in a range [result, last) that should be erased to effect uniqueness.
+	 */
+	template <typename Iterator, typename Compare>
+	Iterator less_adjacent_find(Iterator first, const Iterator last, Compare&& less)
+	{
+		if (first != last)
+		{
+			using std::next;
+			for (Iterator ahead = next(first); ahead != last; ++first, ++ahead)
+			{
+				// Always order (first, ahead) such that the iterators are (earlier, later).
+				// As that's the expected order, less will return false only for equal values.
+				if (false == less(*first, *ahead))
+				{
+					return first;
+				}
+			}
+		}
+		return last;
+	}
+
+	/**	Like std::unique but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
+	 *	@param first The first iterator in a sorted range [first, last).
+	 *	@param last The last iterator in a sorted range [first, last).
+	 *	@param less A less-than predicate.
+	 *	@return The resulting iterator in a range [result, last) that should be erased to effect uniqueness.
+	 */
+	template <typename Iterator, typename Compare>
+	Iterator less_unique(Iterator first, const Iterator last, Compare&& less)
+	{
+		if (first != last)
+		{
+			Iterator result = first;
+			while (++first != last)
+			{
+				// Always order (result, first) such that the iterators are (earlier, later).
+				// As that's the expected order, less will return false only for equal values.
+				if (less(*result, *first) && ++result != first)
+				{
+					*result = std::move(*first);
+				}
+			}
+			return ++result;
+		}
+		return last;
+	}
+} // namespace sh::flat
+
+namespace sh
+{
+
+	/**	A disambiguation tag for sh::flat_map and sh::flat_set.
+	 *	Denotes that provided arguments are both sorted and unique according to the associated comparator.
+	 */
+	constexpr struct sorted_unique_t {} sorted_unique;
+
+	/**	A disambiguation tag for sh::unordered_flat_map and sh::unordered_flat_set.
+	 *	Denotes that provided arguments are unique (but not necessarily sorted) according to the associated comparator.
+	 */
+	constexpr struct unsorted_unique_t {} unsorted_unique;
+
 	/**	Check if a given type has an allocator_type convertible from a given type of allocator.
 	 *	@tparam T The type that could have a T::allocator_type.
 	 *	@tparam Alloc The type to test if it can be converted to T::allocator_type.
@@ -95,14 +149,13 @@ namespace sh
 	template <typename T, typename Alloc>
 	struct uses_allocator
 	{
-		static constexpr bool value = has_convertible_allocator_type_v<T, Alloc>;
+		static constexpr bool value = flat::has_convertible_allocator_type_v<T, Alloc>;
 	};
 	/**	True if a given type has an allocator_type convertible from a given given type of allocator. False otherwise.
 	 *	@tparam T The type that could have a T::allocator_type.
 	 *	@tparam Alloc The type to test if it can be converted to T::allocator_type.
 	 */
 	template <typename T, typename Alloc> constexpr bool uses_allocator_v = uses_allocator<T, Alloc>::value;
-
 } // namespace sh
 
 #endif

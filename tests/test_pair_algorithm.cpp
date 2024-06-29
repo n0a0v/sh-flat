@@ -31,16 +31,17 @@
 
 #include <gtest/gtest.h>
 
-#include <sh/tuple_algorithm.hpp>
+#include <sh/pair_algorithm.hpp>
 
 #include <algorithm>
 #include <map>
 #include <string>
-#include <tuple>
+#include <utility>
 #include <vector>
 
-using sh::tuple_algorithm::iterator_tuple;
-using sh::tuple_algorithm::reference_tuple;
+using sh::pair_algorithm::iterator_pair;
+using sh::pair_algorithm::reference_pair;
+using sh::pair_algorithm::get;
 
 constexpr bool DEBUG_VERBOSE = true;
 
@@ -63,42 +64,39 @@ namespace
 	}
 } // anonymous namespace
 
-TEST(sh_tuple_algorithm, iterator_tuple_ctor)
+TEST(sh_pair_algorithm, iterator_pair_ctor)
 {
 	std::vector<color> colors = { color::red, color::blue };
 	std::vector<std::string> words = { "one", "two" };
-	std::vector<int> numbers = { 1, 2 };
 	using std::get;
 	{
-		const auto iter = iterator_tuple{ words.begin(), numbers.begin(), colors.begin() };
+		const auto iter = iterator_pair{ words.begin(), colors.begin() };
 		EXPECT_EQ(get<0>(iter), words.begin());
-		EXPECT_EQ(get<1>(iter), numbers.begin());
-		EXPECT_EQ(get<2>(iter), colors.begin());
+		EXPECT_EQ(get<1>(iter), colors.begin());
 	}
 	{
-		const auto iter = iterator_tuple{ words.cbegin(), numbers.cbegin(), colors.cbegin() };
+		const auto iter = iterator_pair{ words.cbegin(), colors.cbegin() };
 		EXPECT_EQ(get<0>(iter), words.begin());
-		EXPECT_EQ(get<1>(iter), numbers.begin());
-		EXPECT_EQ(get<2>(iter), colors.begin());
+		EXPECT_EQ(get<1>(iter), colors.begin());
 	}
 }
-TEST(sh_tuple_algorithm, iterator_tuple_ctor_pair)
+TEST(sh_pair_algorithm, iterator_pair_ctor_pair)
 {
 	std::vector<std::string> words = { "one", "two" };
 	std::vector<int> numbers = { 1, 2 };
 	using std::get;
 	{
-		const auto iter = iterator_tuple{ words.begin(), numbers.begin() };
+		const auto iter = iterator_pair{ words.begin(), numbers.begin() };
 		EXPECT_EQ(get<0>(iter), words.begin());
 		EXPECT_EQ(get<1>(iter), numbers.begin());
 	}
 	{
-		const auto iter = iterator_tuple{ words.cbegin(), numbers.cbegin() };
+		const auto iter = iterator_pair{ words.cbegin(), numbers.cbegin() };
 		EXPECT_EQ(get<0>(iter), words.begin());
 		EXPECT_EQ(get<1>(iter), numbers.begin());
 	}
 }
-TEST(sh_tuple_algorithm, iterator_tuple_sort)
+TEST(sh_pair_algorithm, iterator_pair_sort)
 {
 	const std::map<int, std::string> number_to_words =
 	{
@@ -126,11 +124,12 @@ TEST(sh_tuple_algorithm, iterator_tuple_sort)
 	}
 
 	std::sort(
-		iterator_tuple{ words.begin(), numbers.begin() },
-		iterator_tuple{ words.end(), numbers.end() },
+		iterator_pair{ words.begin(), numbers.begin() },
+		iterator_pair{ words.end(), numbers.end() },
 		[](const auto& lhs, const auto& rhs)
 	{
-		return lhs.first < rhs.first;
+		using std::get;
+		return get<0>(lhs) < get<0>(rhs);
 	});
 
 	if constexpr (DEBUG_VERBOSE)
@@ -156,136 +155,123 @@ TEST(sh_tuple_algorithm, iterator_tuple_sort)
 	}
 	EXPECT_EQ(21, sum);
 }
-TEST(sh_tuple_algorithm, reference_tuple_ctor)
+TEST(sh_pair_algorithm, reference_pair_ctor)
 {
+	using std::get;
 	{
 		color c = color::red;
 		std::string word = "one";
-		int number = 1;
-		const auto ref = reference_tuple{ word, number, c };
-		EXPECT_EQ(std::get<0>(ref), word);
-		EXPECT_EQ(std::get<1>(ref), number);
-		EXPECT_EQ(std::get<2>(ref), c);
+		const auto ref = reference_pair{ word, c };
+		EXPECT_EQ(get<0>(ref), word);
+		EXPECT_EQ(get<1>(ref), c);
 	}
 	{
 		const color c = color::red;
 		const std::string word = "one";
-		const int number = 1;
-		const auto ref = reference_tuple{ word, number, c };
-		EXPECT_EQ(std::get<0>(ref), word);
-		EXPECT_EQ(std::get<1>(ref), number);
-		EXPECT_EQ(std::get<2>(ref), c);
+		const auto ref = reference_pair{ word, c };
+		EXPECT_EQ(get<0>(ref), word);
+		EXPECT_EQ(get<1>(ref), c);
 	}
 }
-TEST(sh_tuple_algorithm, reference_tuple_ctor_pair)
+TEST(sh_pair_algorithm, reference_pair_ctor_pair)
 {
+	using std::get;
 	{
 		std::string word = "one";
 		int number = 1;
-		const auto ref = reference_tuple{ word, number };
-		EXPECT_EQ(ref.first, word);
-		EXPECT_EQ(std::get<0>(ref), word);
-		EXPECT_EQ(ref.second, number);
-		EXPECT_EQ(std::get<1>(ref), number);
+		const auto ref = reference_pair{ word, number };
+		//EXPECT_EQ(ref.first, word);
+		EXPECT_EQ(get<0>(ref), word);
+		//EXPECT_EQ(ref.second, number);
+		EXPECT_EQ(get<1>(ref), number);
 	}
 	{
 		const std::string word = "one";
 		const int number = 1;
-		const auto ref = reference_tuple{ word, number };
-		EXPECT_EQ(ref.first, word);
-		EXPECT_EQ(std::get<0>(ref), word);
-		EXPECT_EQ(ref.second, number);
-		EXPECT_EQ(std::get<1>(ref), number);
+		const auto ref = reference_pair{ word, number };
+		//EXPECT_EQ(ref.first, word);
+		EXPECT_EQ(get<0>(ref), word);
+		//EXPECT_EQ(ref.second, number);
+		EXPECT_EQ(get<1>(ref), number);
 	}
 }
-TEST(sh_tuple_algorithm, reference_tuple_assign_operator)
+TEST(sh_pair_algorithm, reference_pair_assign_operator)
 {
 	color c = color::red;
 	std::string word = "one";
-	int number = 1;
-	auto ref = reference_tuple{ word, number, c };
+	auto ref = reference_pair{ word, c };
 	{
-		const auto value = std::make_tuple("two", 2, color::blue);
+		const auto value = std::make_pair("two", color::blue);
 		ref = value;
 		EXPECT_EQ(c, color::blue);
 		EXPECT_EQ(word, "two");
-		EXPECT_EQ(number, 2);
 	}
 	{
-		ref = std::make_tuple("three", 3, color::green);
+		ref = std::make_pair("three", color::green);
 		EXPECT_EQ(c, color::green);
 		EXPECT_EQ(word, "three");
-		EXPECT_EQ(number, 3);
 	}
 }
-TEST(sh_tuple_algorithm, reference_tuple_assign_operator_pair)
+TEST(sh_pair_algorithm, reference_pair_assign_operator_pair)
 {
 	std::string word = "one";
 	int number = 1;
-	auto ref = reference_tuple{ word, number };
+	auto ref = reference_pair{ word, number };
 	{
-		const auto value = std::make_tuple("two", 2);
+		const auto value = std::make_pair("two", 2);
 		ref = value;
 		EXPECT_EQ(word, "two");
 		EXPECT_EQ(number, 2);
 	}
 	{
-		ref = std::make_tuple("three", 3);
+		ref = std::make_pair("three", 3);
 		EXPECT_EQ(word, "three");
 		EXPECT_EQ(number, 3);
 	}
 }
-TEST(sh_tuple_algorithm, reference_tuple_swap)
+TEST(sh_pair_algorithm, reference_pair_swap)
 {
 	// rvalue
 	{
 		color x_c = color::red;
 		std::string x_word = "one";
-		int x_number = 1;
 
 		color y_c = color::blue;
 		std::string y_word = "two";
-		int y_number = 2;
 
 		using std::swap;
 		swap(
-			reference_tuple{ x_word, x_number, x_c },
-			reference_tuple{ y_word, y_number, y_c }
+			reference_pair{ x_word, x_c },
+			reference_pair{ y_word, y_c }
 		);
 
 		EXPECT_EQ(x_c, color::blue);
 		EXPECT_EQ(x_word, "two");
-		EXPECT_EQ(x_number, 2);
 
 		EXPECT_EQ(y_c, color::red);
 		EXPECT_EQ(y_word, "one");
-		EXPECT_EQ(y_number, 1);
 	}
 	// lvalue
 	{
 		color x_c = color::red;
 		std::string x_word = "one";
-		int x_number = 1;
-		auto x = reference_tuple{ x_word, x_number, x_c };
+		auto x = reference_pair{ x_word, x_c };
 
 		color y_c = color::blue;
 		std::string y_word = "two";
-		int y_number = 2;
-		auto y = reference_tuple{ y_word, y_number, y_c };
+		auto y = reference_pair{ y_word, y_c };
 
 		using std::swap;
 		swap(x, y);
 
 		EXPECT_EQ(x_c, color::blue);
 		EXPECT_EQ(x_word, "two");
-		EXPECT_EQ(x_number, 2);
 
 		EXPECT_EQ(y_c, color::red);
 		EXPECT_EQ(y_word, "one");
-		EXPECT_EQ(y_number, 1);
 	}
 }
-TEST(sh_tuple_algorithm, reference_tuple_swap_pair)
+TEST(sh_pair_algorithm, reference_pair_swap_pair)
 {
 	// rvalue
 	{
@@ -297,8 +283,8 @@ TEST(sh_tuple_algorithm, reference_tuple_swap_pair)
 
 		using std::swap;
 		swap(
-			reference_tuple{ x_word, x_number },
-			reference_tuple{ y_word, y_number }
+			reference_pair{ x_word, x_number },
+			reference_pair{ y_word, y_number }
 		);
 
 		EXPECT_EQ(x_word, "two");
@@ -311,11 +297,11 @@ TEST(sh_tuple_algorithm, reference_tuple_swap_pair)
 	{
 		std::string x_word = "one";
 		int x_number = 1;
-		auto x = reference_tuple{ x_word, x_number };
+		auto x = reference_pair{ x_word, x_number };
 
 		std::string y_word = "two";
 		int y_number = 2;
-		auto y = reference_tuple{ y_word, y_number };
+		auto y = reference_pair{ y_word, y_number };
 
 		using std::swap;
 		swap(x, y);

@@ -265,7 +265,7 @@ public:
 	std::pair<iterator, bool> emplace(K&& key_arg);
 	template <typename K>
 	iterator emplace_hint(const_iterator hint, K&& key_arg);
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	size_type erase(const K& key_arg);
 
 	// Modifiers (extensions):
@@ -285,25 +285,25 @@ public:
 	std::pair<const_iterator, const_iterator> equal_range(const key_type& key_arg) const;
 
 	// Lookup (transparent):
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	iterator find(const K& key_arg);
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	const_iterator find(const K& key_arg) const;
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	size_type count(const K& key_arg) const;
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	bool contains(const K& key_arg) const;
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	iterator lower_bound(const K& key_arg);
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	const_iterator lower_bound(const K& key_arg) const;
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	iterator upper_bound(const K& key_arg);
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	const_iterator upper_bound(const K& key_arg) const;
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	std::pair<iterator, iterator> equal_range(const K& key_arg);
-	template <typename K, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	std::pair<const_iterator, const_iterator> equal_range(const K& key_arg) const;
 
 	// Observers:
@@ -319,7 +319,7 @@ public:
 private:
 	template <typename Iterator>
 	Iterator do_find(const key_type& key_arg, const Iterator first, const Iterator last) const;
-	template <typename K, typename Iterator, typename C = key_compare, typename = typename C::is_transparent>
+	template <typename K, typename Iterator, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	Iterator do_find(const K& key_arg, const Iterator first, const Iterator last) const;
 	void sort_containers_and_erase_duplicates();
 
@@ -744,7 +744,7 @@ auto flat_set<Key, Compare, KeyContainer>::emplace_hint(const const_iterator hin
 	return emplace(std::forward<K>(key_arg)).first;
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::erase(const K& key_arg)
 	-> size_type
 {
@@ -832,34 +832,34 @@ auto flat_set<Key, Compare, KeyContainer>::equal_range(const key_type& key_arg) 
 
 // Lookup (transparent):
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::find(const K& key_arg)
 	 -> iterator
 {
 	return do_find(key_arg, m_keys.begin(), m_keys.end());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::find(const K& key_arg) const
 	-> const_iterator
 {
 	return do_find(key_arg, m_keys.begin(), m_keys.end());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::count(const K& key_arg) const
 	-> size_type
 {
 	return find(key_arg) != m_keys.end() ? 1 : 0;
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 bool flat_set<Key, Compare, KeyContainer>::contains(const K& key_arg) const
 {
 	return find(key_arg) != m_keys.end();
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::lower_bound(const K& key_arg)
 	-> iterator
 {
@@ -867,7 +867,7 @@ auto flat_set<Key, Compare, KeyContainer>::lower_bound(const K& key_arg)
 	return lower_bound(m_keys.begin(), m_keys.end(), key_arg, get_less());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::lower_bound(const K& key_arg) const
 	-> const_iterator
 {
@@ -875,7 +875,7 @@ auto flat_set<Key, Compare, KeyContainer>::lower_bound(const K& key_arg) const
 	return lower_bound(m_keys.begin(), m_keys.end(), key_arg, get_less());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::upper_bound(const K& key_arg)
 	-> iterator
 {
@@ -883,7 +883,7 @@ auto flat_set<Key, Compare, KeyContainer>::upper_bound(const K& key_arg)
 	return upper_bound(m_keys.begin(), m_keys.end(), key_arg, get_less());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::upper_bound(const K& key_arg) const
 	-> const_iterator
 {
@@ -891,7 +891,7 @@ auto flat_set<Key, Compare, KeyContainer>::upper_bound(const K& key_arg) const
 	return upper_bound(m_keys.begin(), m_keys.end(), key_arg, get_less());
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::equal_range(const K& key_arg)
 	-> std::pair<iterator, iterator>
 {
@@ -899,7 +899,7 @@ auto flat_set<Key, Compare, KeyContainer>::equal_range(const K& key_arg)
 	return std::make_pair(iter, iter == m_keys.end() ? iter : std::next(iter));
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename, typename>
+template <typename K, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::equal_range(const K& key_arg) const
 	-> std::pair<const_iterator, const_iterator>
 {
@@ -946,7 +946,7 @@ auto flat_set<Key, Compare, KeyContainer>::do_find(const key_type& key_arg, cons
 		: last;
 }
 template <typename Key, typename Compare, typename KeyContainer>
-template <typename K, typename Iterator, typename, typename>
+template <typename K, typename Iterator, typename C, typename IsTransparent>
 auto flat_set<Key, Compare, KeyContainer>::do_find(const K& key_arg, const Iterator first, const Iterator last) const
 	-> Iterator
 {

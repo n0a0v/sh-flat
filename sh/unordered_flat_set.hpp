@@ -671,7 +671,7 @@ void unordered_flat_set<Key, KeyEqual, KeyContainer>::insert(const unsorted_uniq
 	// Deduplicate the (fairly) slow way, by checking each element against the
 	// preexisting elements but not newly inserted elements, as they're tagged
 	// unsorted_unique.
-	if constexpr (has_reserve_v<container_type>)
+	if constexpr (flat::has_reserve_v<container_type>)
 	{
 		using std::distance;
 		// This intentionally ignores preexisting elements as a rough heuristic

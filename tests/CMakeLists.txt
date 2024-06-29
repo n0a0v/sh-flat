@@ -1,7 +1,10 @@
+set(gtest_force_shared_crt ON CACHE BOOL "Always use msvcrt.dll" FORCE)
 set(TESTS_SRC
+	test_adjacent_flat_map.cpp
 	test_flat_map.cpp
 	test_flat_set.cpp
-	test_tuple_algorithm.cpp
+	test_pair_algorithm.cpp
+	test_unordered_adjacent_flat_map.cpp
 	test_unordered_flat_map.cpp
 	test_unordered_flat_set.cpp
 	tests.cpp
