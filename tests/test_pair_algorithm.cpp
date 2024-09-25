@@ -43,7 +43,7 @@ using sh::pair_algorithm::iterator_pair;
 using sh::pair_algorithm::reference_pair;
 using sh::pair_algorithm::get;
 
-constexpr bool DEBUG_VERBOSE = true;
+constexpr bool DEBUG_VERBOSE = false;
 
 namespace
 {

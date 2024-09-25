@@ -1,5 +1,5 @@
 #!/bin/sh
-NAMES='clear composite eraseall erase find insert iterate'
+NAMES='clear composite copy eraseall erase find insert iterate'
 for NAME in ${NAMES};
 do
 	echo "${NAME}..."

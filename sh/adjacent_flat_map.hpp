@@ -1105,7 +1105,6 @@ template <typename K, typename M, typename C, typename IsTransparent>
 auto adjacent_flat_map<Key, T, Compare, Container>::insert_or_assign(K&& key_arg, M&& mapped_arg)
 	-> std::pair<iterator, bool>
 {
-std::cout << __LINE__ << '\n';
 	const std::pair<iterator, bool> it_inserted = do_transparent_emplace_if_unique(std::forward<K>(key_arg), std::forward<M>(mapped_arg));
 	if (it_inserted.second == false)
 	{
@@ -1119,7 +1118,6 @@ template <typename K, typename M, typename C, typename IsTransparent>
 auto adjacent_flat_map<Key, T, Compare, Container>::insert_or_assign(const_iterator hint, K&& key_arg, M&& mapped_arg)
 	-> iterator
 {
-std::cout << __LINE__ << '\n';
 	return this->insert_or_assign<K, M, void, void>(std::forward<K>(key_arg), std::forward<M>(mapped_arg)).first;
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1392,7 +1390,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_lower_bound(const key_typ
 		}
 		const key_compare& m_key_compare;
 	};
-	return lower_bound(first, last, key_arg, key_value_compare{ *this });
+	return lower_bound(first, last, key_arg, key_value_compare{ get_less() });
 }
 template <typename Key, typename T, typename Compare, typename Container>
 template <typename K, typename Iterator, typename C, typename IsTransparent>
@@ -1414,7 +1412,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_lower_bound(const K& key_
 		}
 		const key_compare& m_key_compare;
 	};
-	return lower_bound(first, last, key_arg, key_value_compare{ *this });
+	return lower_bound(first, last, key_arg, key_value_compare{ get_less() });
 }
 template <typename Key, typename T, typename Compare, typename Container>
 template <typename K, typename... Args>
@@ -1439,7 +1437,7 @@ void adjacent_flat_map<Key, T, Compare, Container>::do_insert_back_without_sorti
 }
 template <typename Key, typename T, typename Compare, typename Container>
 template <typename Iterator>
-void adjacent_flat_map<Key, T, Compare, Container>::erase_sorted_duplicates(Iterator first, const Iterator last, const value_compare& comp)
+void adjacent_flat_map<Key, T, Compare, Container>::erase_sorted_duplicates(const Iterator first, const Iterator last, const value_compare& comp)
 {
 	const Iterator result = flat::less_unique(first, last, comp);
 	m_key_value_pairs.erase(result, last);
@@ -1450,7 +1448,6 @@ void adjacent_flat_map<Key, T, Compare, Container>::sort_containers_and_erase_du
 	using std::begin;
 	using std::end;
 	using std::sort;
-	using std::unique;
 	auto first = begin(m_key_value_pairs);
 	auto last = end(m_key_value_pairs);
 	const value_compare comp = value_comp();

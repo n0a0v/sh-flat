@@ -287,7 +287,8 @@ public:
 	>
 	void insert(InputIterator first, InputIterator last);
 	template <typename InputIterator,
-		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category>
+		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category
+	>
 	void insert(unsorted_unique_t, InputIterator first, InputIterator last);
 	void insert(std::initializer_list<value_type> init);
 	void insert(unsorted_unique_t, std::initializer_list<value_type> init);
