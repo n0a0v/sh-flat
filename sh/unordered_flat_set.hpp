@@ -717,7 +717,21 @@ template <typename Key, typename KeyEqual, typename KeyContainer>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::erase(const const_iterator pos)
 	-> iterator
 {
-	return m_keys.erase(pos);
+	{
+		using std::distance;
+		using std::end;
+		using std::next;
+		const difference_type pos_index{ distance(m_keys.cbegin(), pos) };
+		const typename container_type::iterator pos_iter = next(m_keys.begin(), pos_index);
+		if (next(pos_iter) != end(m_keys))
+		{
+			*pos_iter = std::move(m_keys.back());
+			m_keys.pop_back();
+			return iterator{ pos_iter };
+		}
+	}
+	m_keys.pop_back();
+	return end();
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::erase(const const_iterator first, const const_iterator last)
@@ -772,12 +786,20 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::erase(const K& key_arg)
 	-> size_type
 {
-	const iterator it = find(key_arg);
-	if (it == end())
+	using std::begin;
+	using std::end;
+	using std::next;
+	const auto end_iter = end(m_keys);
+	const auto iter = do_find(key_arg, begin(m_keys), end_iter);
+	if (iter == end_iter)
 	{
 		return 0;
 	}
-	m_keys.erase(it);
+	if (next(iter) != end_iter)
+	{
+		*iter = std::move(m_keys.back());
+	}
+	m_keys.pop_back();
 	return 1;
 }
 

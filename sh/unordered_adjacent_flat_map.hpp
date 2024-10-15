@@ -955,7 +955,21 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const_iterator pos)
 	-> iterator
 {
-	return iterator{ m_key_value_pairs.erase(pos.get()) };
+	{
+		using std::distance;
+		using std::end;
+		using std::next;
+		const difference_type pos_index{ distance(m_key_value_pairs.cbegin(), pos.get()) };
+		const typename container_type::iterator pos_iter = next(m_key_value_pairs.begin(), pos_index);
+		if (next(pos_iter) != end(m_key_value_pairs))
+		{
+			*pos_iter = std::move(m_key_value_pairs.back());
+			m_key_value_pairs.pop_back();
+			return iterator{ pos_iter };
+		}
+	}
+	m_key_value_pairs.pop_back();
+	return end();
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const_iterator first, const const_iterator last)
@@ -1048,14 +1062,20 @@ template <typename K, typename C, typename IsTransparent, typename IsConvertible
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const K& key_arg)
 	-> size_type
 {
-	using std::get;
+	using std::begin;
 	using std::end;
-	const iterator it = find(key_arg);
-	if (it.get() == end(m_key_value_pairs))
+	using std::next;
+	const auto end_iter = end(m_key_value_pairs);
+	const auto iter = do_find(key_arg, begin(m_key_value_pairs), end_iter);
+	if (iter == end_iter)
 	{
 		return 0;
 	}
-	erase(it);
+	if (next(iter) != end_iter)
+	{
+		*iter = std::move(m_key_value_pairs.back());
+	}
+	m_key_value_pairs.pop_back();
 	return 1;
 }
 

@@ -1029,9 +1029,29 @@ template <typename Key, typename T, typename KeyEqual, typename KeyContainer, ty
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(const const_iterator pos)
 	-> iterator
 {
-	using std::get;
-	// Desynchronization occurs if m_keys erases but m_values throws.
-	return iterator{ m_keys.erase(get<0>(pos)), m_values.erase(get<1>(pos)) };
+	{
+		using std::distance;
+		using std::end;
+		using std::get;
+		using std::next;
+		const difference_type pos_index{ distance(m_keys.cbegin(), get<0>(pos)) };
+		const typename key_container_type::iterator key_iter = next(m_keys.begin(), pos_index);
+		if (next(key_iter) != end(m_keys))
+		{
+			const typename mapped_container_type::iterator value_iter = next(m_values.begin(), pos_index);
+			// Desynchronization occurs if exception thrown before m_values pops.
+			*key_iter = std::move(m_keys.back());
+			*value_iter = std::move(m_values.back());
+			m_keys.pop_back();
+			m_values.pop_back();
+			return iterator{ key_iter, value_iter };
+		}
+	}
+	// Desynchronization occurs if m_keys pops but m_values throws.
+	m_keys.pop_back();
+	m_values.pop_back();
+	return end();
+
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(const const_iterator first, const const_iterator last)
@@ -1128,14 +1148,26 @@ template <typename K, typename C, typename IsTransparent, typename IsConvertible
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(const K& key_arg)
 	-> size_type
 {
-	using std::get;
+	using std::begin;
 	using std::end;
-	const iterator it = find(key_arg);
-	if (get<0>(it) == end(m_keys))
+	using std::next;
+	const auto key_begin = begin(m_keys);
+	const auto key_end = end(m_keys);
+	const auto key_iter = do_find(key_arg, key_begin, key_end);
+	if (key_iter == key_end)
 	{
 		return 0;
 	}
-	erase(it);
+	if (next(key_iter) != key_end)
+	{
+		using std::distance;
+		const auto value_iter = next(begin(m_values), distance(key_begin, key_iter));
+		// Desynchronization occurs if anything throws before m_values pops.
+		*key_iter = std::move(m_keys.back());
+		*value_iter = std::move(m_values.back());
+	}
+	m_keys.pop_back();
+	m_values.pop_back();
 	return 1;
 }
 
