@@ -31,7 +31,7 @@
 
 #include <gtest/gtest.h>
 
-#include <sh/pair_algorithm.hpp>
+#include <sh/flat_algorithm.hpp>
 
 #include <algorithm>
 #include <map>
@@ -39,9 +39,9 @@
 #include <utility>
 #include <vector>
 
-using sh::pair_algorithm::iterator_pair;
-using sh::pair_algorithm::reference_pair;
-using sh::pair_algorithm::get;
+using sh::flat::iterator_pair;
+using sh::flat::reference_pair;
+using sh::flat::get;
 
 constexpr bool DEBUG_VERBOSE = false;
 

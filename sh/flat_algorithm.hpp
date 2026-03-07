@@ -29,28 +29,120 @@
 	OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef INC_SH__PAIR_ALGORITHM_HPP
-#define INC_SH__PAIR_ALGORITHM_HPP
+#ifndef INC_SH__FLAT_ALGORITHM_HPP
+#define INC_SH__FLAT_ALGORITHM_HPP
 
+#include <cassert>
 #include <cstddef>
+#include <memory>
 #include <type_traits>
 #include <utility>
 
-namespace sh::pair_algorithm
+#if !defined(SH_FLAT_ASSERT)
+	/**	Transparently wraps assert to allow asserts to be turned off for the sh flat_map/set-style containers in one location, if too costly.
+	 */
+	#define SH_FLAT_ASSERT(CONDITION, ...) \
+		/* Comment: __VA_ARGS__ */ \
+		assert(CONDITION)
+#endif // !SH_FLAT_ASSERT
+
+namespace sh
 {
+
+	/**	A disambiguation tag for sh::flat_map and sh::flat_set.
+	 *	Denotes that provided arguments are both sorted and unique according to the associated comparator.
+	 */
+	constexpr struct sorted_unique_t {} sorted_unique;
+
+	/**	A disambiguation tag for sh::unordered_flat_map and sh::unordered_flat_set.
+	 *	Denotes that provided arguments are unique (but not necessarily sorted) according to the associated comparator.
+	 */
+	constexpr struct unsorted_unique_t {} unsorted_unique;
+
+} // namespace sh
+
+namespace sh::flat
+{
+	/**	Check if a given type has a reserve function like std::vector's.
+	 *	@tparam T The type to check for a callable T::reserve(size_type) member function.
+	 */
+	template <typename T, typename IsVoid = void> struct has_reserve : std::false_type {};
+	template <typename T> struct has_reserve<T,
+		std::void_t<
+			decltype(
+				std::declval<T>().reserve(0u)
+			)
+		>
+	> : std::true_type {};
+	/**	True if a given type has a reserve function like std::vector's. False otherwise.
+	 *	@tparam T The type to check for a callable T::reserve(size_type) member function.
+	 */
+	template <typename T> constexpr bool has_reserve_v = has_reserve<T>::value;
+
+	/**	Like std::adjacent_find but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
+	 *	@param first The first iterator in a sorted range [first, last).
+	 *	@param last The last iterator in a sorted range [first, last).
+	 *	@param less A less-than predicate.
+	 *	@return The resulting iterator in a range [result, last) that should be erased to effect uniqueness.
+	 */
+	template <typename Iterator, typename Compare>
+	Iterator less_adjacent_find(Iterator first, const Iterator last, Compare&& less)
+	{
+		if (first != last)
+		{
+			using std::next;
+			for (Iterator ahead = next(first); ahead != last; ++first, ++ahead)
+			{
+				// Always order (first, ahead) such that the iterators are (earlier, later).
+				// As that's the expected order, less will return false only for equal values.
+				if (false == less(*first, *ahead))
+				{
+					return first;
+				}
+			}
+		}
+		return last;
+	}
+
+	/**	Like std::unique but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
+	 *	@param first The first iterator in a sorted range [first, last).
+	 *	@param last The last iterator in a sorted range [first, last).
+	 *	@param less A less-than predicate.
+	 *	@return The resulting iterator in a range [result, last) that should be erased to effect uniqueness.
+	 */
+	template <typename Iterator, typename Compare>
+	Iterator less_unique(Iterator first, const Iterator last, Compare&& less)
+	{
+		if (first != last)
+		{
+			Iterator result = first;
+			while (++first != last)
+			{
+				// Always order (result, first) such that the iterators are (earlier, later).
+				// As that's the expected order, less will return false only for equal values.
+				if (less(*result, *first) && ++result != first)
+				{
+					*result = std::move(*first);
+				}
+			}
+			return ++result;
+		}
+		return last;
+	}
+
 	template <typename T1, typename T2>
 	class reference_pair final : public std::pair<std::add_lvalue_reference_t<T1>, std::add_lvalue_reference_t<T2>>
 	{
 	public:
-		using underlying_type = std::pair<std::add_lvalue_reference_t<T1>, std::add_lvalue_reference_t<T2>>;
+		using pair_type = std::pair<std::add_lvalue_reference_t<T1>, std::add_lvalue_reference_t<T2>>;
 
 		template <typename... Args>
 		explicit reference_pair(Args&... args)
-			: underlying_type{ args... }
+			: pair_type{ args... }
 		{ }
 
 		template <typename U,
-			typename = std::enable_if_t<std::tuple_size_v<underlying_type> == std::tuple_size_v<std::decay_t<U>>>
+			typename IsPairLike = std::enable_if_t<std::tuple_size_v<pair_type> == std::tuple_size_v<std::decay_t<U>>>
 		>
 		reference_pair& operator=(U&& other) noexcept
 		{
@@ -106,7 +198,7 @@ namespace sh::pair_algorithm
 	class iterator_pair final
 	{
 	public:
-		using underlying_type = std::pair<I1, I2>;
+		using iterator_pair_type = std::pair<I1, I2>;
 		using difference_type = std::ptrdiff_t;
 		using value_type = std::pair<
 			typename std::iterator_traits<I1>::value_type,
@@ -117,9 +209,9 @@ namespace sh::pair_algorithm
 		struct pointer final
 		{
 			reference m_reference;
-			reference* operator->()
+			reference* operator->() noexcept
 			{
-				return &m_reference;
+				return std::addressof(m_reference);
 			}
 		};
 		using iterator_category = typename std::iterator_traits<I1>::iterator_category;
@@ -136,7 +228,7 @@ namespace sh::pair_algorithm
 			: m_iterators{ other.m_iterators }
 		{ }
 		template <typename... Args,
-			typename = std::enable_if_t<std::is_constructible_v<underlying_type, Args...>>
+			typename IsConstructible = std::enable_if_t<std::is_constructible_v<iterator_pair_type, Args...>>
 		>
 		explicit iterator_pair(Args&&... args)
 			: m_iterators{ std::forward<Args>(args)... }
@@ -258,7 +350,7 @@ namespace sh::pair_algorithm
 		template <typename J1, typename J2>
 		friend class iterator_pair;
 
-		underlying_type m_iterators;
+		iterator_pair_type m_iterators;
 	};
 
 	template <typename I1, typename I2>
@@ -293,19 +385,19 @@ namespace sh::pair_algorithm
 	class iterator_wrapper final
 	{
 	public:
-		using underlying_type = I;
+		using iterator_type = I;
 		using difference_type = std::ptrdiff_t;
 		using value_type = V;
 		using reference = R;
 		struct pointer final
 		{
 			reference m_reference;
-			reference* operator->()
+			reference* operator->() noexcept
 			{
-				return &m_reference;
+				return std::addressof(m_reference);
 			}
 		};
-		using iterator_category = typename std::iterator_traits<underlying_type>::iterator_category;
+		using iterator_category = typename std::iterator_traits<iterator_type>::iterator_category;
 
 		iterator_wrapper() = default;
 		iterator_wrapper(const iterator_wrapper& other) = default;
@@ -315,7 +407,7 @@ namespace sh::pair_algorithm
 			: m_iterator{ other.m_iterator }
 		{ }
 		template <typename... Args,
-			typename = std::enable_if_t<std::is_constructible_v<underlying_type, Args...>>
+			typename IsConstructible = std::enable_if_t<std::is_constructible_v<iterator_type, Args...>>
 		>
 		explicit iterator_wrapper(Args&&... args)
 			: m_iterator{ std::forward<Args>(args)... }
@@ -412,7 +504,7 @@ namespace sh::pair_algorithm
 			swap(lhs.m_iterator, rhs.m_iterator);
 		}
 
-		constexpr const underlying_type& get() const
+		constexpr const iterator_type& get() const
 		{
 			return m_iterator;
 		}
@@ -421,29 +513,29 @@ namespace sh::pair_algorithm
 		template <typename I2, typename V2, typename R2>
 		friend class iterator_wrapper;
 
-		underlying_type m_iterator;
+		iterator_type m_iterator;
 	};
 
-} // sh::pair_algorithm
+} // sh::flat
 
 namespace std
 {
 	template <std::size_t I, typename J1, typename J2>
-	struct tuple_element<I, sh::pair_algorithm::reference_pair<J1, J2>>
-		: tuple_element<I, typename sh::pair_algorithm::reference_pair<J1, J2>::underlying_type>
+	struct tuple_element<I, sh::flat::reference_pair<J1, J2>>
+		: tuple_element<I, typename sh::flat::reference_pair<J1, J2>::pair_type>
 	{ };
 	template <std::size_t I, typename J1, typename J2>
-	struct tuple_element<I, sh::pair_algorithm::iterator_pair<J1, J2>>
-		: tuple_element<I, typename sh::pair_algorithm::iterator_pair<J1, J2>::underlying_type>
+	struct tuple_element<I, sh::flat::iterator_pair<J1, J2>>
+		: tuple_element<I, typename sh::flat::iterator_pair<J1, J2>::iterator_pair_type>
 	{ };
 
 	template <typename J1, typename J2>
-	struct tuple_size<sh::pair_algorithm::reference_pair<J1, J2>>
-		: tuple_size<typename sh::pair_algorithm::reference_pair<J1, J2>::underlying_type>
+	struct tuple_size<sh::flat::reference_pair<J1, J2>>
+		: tuple_size<typename sh::flat::reference_pair<J1, J2>::pair_type>
 	{ };
 	template <typename J1, typename J2>
-	struct tuple_size<sh::pair_algorithm::iterator_pair<J1, J2>>
-		: tuple_size<typename sh::pair_algorithm::iterator_pair<J1, J2>::underlying_type>
+	struct tuple_size<sh::flat::iterator_pair<J1, J2>>
+		: tuple_size<typename sh::flat::iterator_pair<J1, J2>::iterator_pair_type>
 	{ };
 } // namespace std
 

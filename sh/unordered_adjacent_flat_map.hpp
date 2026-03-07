@@ -31,12 +31,12 @@
 #ifndef INC_SH__UNORDERED_ADJACENT_FLAT_MAP_HPP
 #define INC_SH__UNORDERED_ADJACENT_FLAT_MAP_HPP
 
-#include "flat.hpp"
-#include "pair_algorithm.hpp"
+#include "flat_algorithm.hpp"
 
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
+#include <memory>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -61,10 +61,10 @@ public:
 	using const_reference = const value_type&;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = pair_algorithm::iterator_wrapper<typename container_type::iterator,
+	using iterator = flat::iterator_wrapper<typename container_type::iterator,
 		std::pair<key_type, mapped_type>,
 		std::pair<const key_type, mapped_type&>>;
-	using const_iterator = pair_algorithm::iterator_wrapper<typename container_type::const_iterator,
+	using const_iterator = flat::iterator_wrapper<typename container_type::const_iterator,
 		const std::pair<key_type, mapped_type>,
 		std::pair<const key_type&, const mapped_type&>>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
@@ -90,14 +90,14 @@ public:
 	unordered_adjacent_flat_map();
 	unordered_adjacent_flat_map(const unordered_adjacent_flat_map& other);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		const unordered_adjacent_flat_map& other,
 		const Allocator& alloc);
 	unordered_adjacent_flat_map(unordered_adjacent_flat_map&& other);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unordered_adjacent_flat_map&& other,
@@ -106,13 +106,13 @@ public:
 		container_type cont,
 		const key_equal& eq = key_equal{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		const container_type& cont,
@@ -122,14 +122,14 @@ public:
 		unsorted_unique_t,
 		const container_type& cont);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
@@ -138,11 +138,11 @@ public:
 		const Allocator& alloc);
 	explicit unordered_adjacent_flat_map(const key_equal& eq);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(const key_equal& eq, const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	explicit unordered_adjacent_flat_map(const Allocator& alloc);
 	template <typename InputIterator,
@@ -154,7 +154,7 @@ public:
 		const key_equal& eq = key_equal{});
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		InputIterator first,
@@ -163,7 +163,7 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		InputIterator first,
@@ -179,7 +179,7 @@ public:
 		const key_equal& eq = key_equal{});
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
@@ -189,7 +189,7 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
@@ -200,14 +200,14 @@ public:
 		std::initializer_list<value_type> init,
 		 const key_equal& eq = key_equal{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		std::initializer_list<value_type> init,
 		const key_equal& eq,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		std::initializer_list<value_type> init,
@@ -216,7 +216,7 @@ public:
 		std::initializer_list<value_type> init,
 		const key_equal& eq = key_equal{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
@@ -224,7 +224,7 @@ public:
 		const key_equal& eq,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	unordered_adjacent_flat_map(
 		unsorted_unique_t,
@@ -336,6 +336,10 @@ public:
 	size_type erase(const K& key_arg);
 
 	// Modifiers (extensions):
+	template <
+		typename C = container_type,
+		typename HasReserve = std::enable_if_t<flat::has_reserve_v<C>>
+	>
 	void reserve(size_type n);
 	void shrink_to_fit();
 
@@ -899,7 +903,9 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const unso
 	// Deduplicate the (fairly) slow way, by checking each element against the
 	// preexisting elements but not newly inserted elements, as they're tagged
 	// unsorted_unique.
-	if constexpr (flat::has_reserve_v<container_type>)
+	if constexpr (
+		std::is_base_of_v<std::forward_iterator_tag, typename std::iterator_traits<InputIterator>::iterator_category>
+		&& flat::has_reserve_v<unordered_adjacent_flat_map<Key, T, KeyEqual, Container>>)
 	{
 		using std::distance;
 		// This intentionally ignores preexisting elements as a rough heuristic
@@ -1081,6 +1087,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const K& ke
 
 // Modifiers (extensions):
 template <typename Key, typename T, typename KeyEqual, typename Container>
+template <typename C, typename HasReserve>
 void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::reserve(const size_type n)
 {
 	m_key_value_pairs.reserve(n);
@@ -1266,15 +1273,15 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_find(const K& 
 		return equal(key_arg, get<0>(key_value));
 	});
 }
-template <typename Key, typename T, typename Compare, typename Container>
+template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator>
-void unordered_adjacent_flat_map<Key, T, Compare, Container>::do_insert_back_without_checking_if_unique(const InputIterator first, const InputIterator last)
+void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_insert_back_without_checking_if_unique(const InputIterator first, const InputIterator last)
 {
 	m_key_value_pairs.insert(m_key_value_pairs.end(), first, last);
 }
-template <typename Key, typename T, typename Compare, typename Container>
+template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename... Args>
-auto unordered_adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_back_if_unique(K&& key_arg, Args&&... args)
+auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_transparent_emplace_back_if_unique(K&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
 	const iterator iter = find(key_arg);
@@ -1288,14 +1295,14 @@ auto unordered_adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emp
 	return std::make_pair(iter, false);
 }
 
-template <typename Key, typename T, typename Compare, typename Container>
-constexpr auto unordered_adjacent_flat_map<Key, T, Compare, Container>::get_equal() noexcept
+template <typename Key, typename T, typename KeyEqual, typename Container>
+constexpr auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::get_equal() noexcept
 	-> key_equal&
 {
 	return *this;
 }
-template <typename Key, typename T, typename Compare, typename Container>
-constexpr auto unordered_adjacent_flat_map<Key, T, Compare, Container>::get_equal() const noexcept
+template <typename Key, typename T, typename KeyEqual, typename Container>
+constexpr auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::get_equal() const noexcept
 	-> const key_equal&
 {
 	return *this;

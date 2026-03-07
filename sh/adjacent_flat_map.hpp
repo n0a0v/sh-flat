@@ -32,12 +32,12 @@
 #ifndef INC_SH__ADJACENT_FLAT_MAP_HPP
 #define INC_SH__ADJACENT_FLAT_MAP_HPP
 
-#include "flat.hpp"
-#include "pair_algorithm.hpp"
+#include "flat_algorithm.hpp"
 
 #include <algorithm>
 #include <initializer_list>
 #include <iterator>
+#include <memory>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -62,10 +62,10 @@ public:
 	using const_reference = const value_type&;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = pair_algorithm::iterator_wrapper<typename container_type::iterator,
+	using iterator = flat::iterator_wrapper<typename container_type::iterator,
 		std::pair<key_type, mapped_type>,
 		std::pair<const key_type&, mapped_type&>>;
-	using const_iterator = pair_algorithm::iterator_wrapper<typename container_type::const_iterator,
+	using const_iterator = flat::iterator_wrapper<typename container_type::const_iterator,
 		const std::pair<key_type, mapped_type>,
 		std::pair<const key_type&, const mapped_type&>>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
@@ -91,14 +91,14 @@ public:
 	adjacent_flat_map();
 	adjacent_flat_map(const adjacent_flat_map& other);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		const adjacent_flat_map& other,
 		const Allocator& alloc);
 	adjacent_flat_map(adjacent_flat_map&& other);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		adjacent_flat_map&& other,
@@ -107,13 +107,13 @@ public:
 		container_type cont,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		const container_type& cont,
@@ -123,14 +123,14 @@ public:
 		sorted_unique_t,
 		const container_type& cont);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
 		const container_type& cont,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
@@ -139,11 +139,11 @@ public:
 		const Allocator& alloc);
 	explicit adjacent_flat_map(const key_compare& comp);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(const key_compare& comp, const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	explicit adjacent_flat_map(const Allocator& alloc);
 	template <typename InputIterator,
@@ -155,7 +155,7 @@ public:
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		InputIterator first,
@@ -164,7 +164,7 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		InputIterator first,
@@ -180,7 +180,7 @@ public:
 		const key_compare& comp = key_compare{});
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
@@ -190,7 +190,7 @@ public:
 		const Allocator& alloc);
 	template <typename InputIterator, typename Allocator,
 		typename HasIteratorCategory = typename std::iterator_traits<InputIterator>::iterator_category,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
@@ -201,14 +201,14 @@ public:
 		std::initializer_list<value_type> init,
 		 const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		std::initializer_list<value_type> init,
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		std::initializer_list<value_type> init,
@@ -217,7 +217,7 @@ public:
 		std::initializer_list<value_type> init,
 		const key_compare& comp = key_compare{});
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
@@ -225,7 +225,7 @@ public:
 		const key_compare& comp,
 		const Allocator& alloc);
 	template <typename Allocator,
-		typename UsesAllocator = std::enable_if_t<uses_allocator_v<container_type, Allocator>>
+		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
 	adjacent_flat_map(
 		sorted_unique_t,
@@ -1218,7 +1218,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::find(const K& key_arg)
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	return iterator{ do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1229,7 +1228,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::find(const K& key_arg) const
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	return const_iterator{ do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1257,7 +1255,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::lower_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	return iterator{ do_lower_bound(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1268,7 +1265,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::lower_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	return const_iterator{ do_lower_bound(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1280,7 +1276,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::upper_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	const auto& less = get_less();
 	return iterator{ upper_bound(begin(m_key_value_pairs), end(m_key_value_pairs), key_arg, less) };
 }
@@ -1293,7 +1288,6 @@ auto adjacent_flat_map<Key, T, Compare, Container>::upper_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	using std::distance;
 	const auto& less = get_less();
 	return const_iterator{ upper_bound(begin(m_key_value_pairs), end(m_key_value_pairs), key_arg, less) };
 }
