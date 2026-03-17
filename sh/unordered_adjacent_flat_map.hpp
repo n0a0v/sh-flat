@@ -301,23 +301,27 @@ public:
 	void clear() noexcept;
 
 	// Modifiers (transparent):
-	template <typename... Args> std::pair<iterator, bool> emplace(Args&&... args);
-	template <typename... Args> iterator emplace_hint(const_iterator hint, Args&&... args);
+	template <typename... Args,
+		typename IsConstructible = std::enable_if_t<std::is_constructible_v<value_type, Args...>>
+	>
+	std::pair<iterator, bool> emplace(Args&&... args);
+	template <typename... Args,
+		typename IsConstructible = std::enable_if_t<std::is_constructible_v<value_type, Args...>>
+	>
+	iterator emplace_hint(const_iterator hint, Args&&... args);
 	template <typename K, typename... Args,
 		typename C = key_equal,
-		typename IsTransparent = typename C::is_transparent,
-		typename IsConvertible = std::enable_if_t<
-			false == std::is_convertible_v<K&&, const_iterator>
-			&& false == std::is_convertible_v<K&&, iterator>
+		typename IsTransparentAndNotIterator = std::enable_if_t<
+			false == std::is_convertible_v<K&&, const_iterator> && false == std::is_convertible_v<K&&, iterator>,
+			typename C::is_transparent
 		>
 	>
 	std::pair<iterator, bool> try_emplace(K&& key_arg, Args&&... args);
 	template <typename K, typename... Args,
 		typename C = key_equal,
-		typename IsTransparent = typename C::is_transparent,
-		typename IsConvertible = std::enable_if_t<
-			false == std::is_convertible_v<K&&, const_iterator>
-			&& false == std::is_convertible_v<K&&, iterator>
+		typename IsTransparentAndNotIterator = std::enable_if_t<
+			false == std::is_convertible_v<K&&, const_iterator> && false == std::is_convertible_v<K&&, iterator>,
+			typename C::is_transparent
 		>
 	>
 	iterator try_emplace(const_iterator hint, K&& key_arg, Args&&... args);
@@ -327,10 +331,9 @@ public:
 	iterator insert_or_assign(const_iterator hint, K&& key_arg, M&& mapped_arg);
 	template <typename K,
 		typename C = key_equal,
-		typename IsTransparent = typename C::is_transparent,
-		typename IsConvertible = std::enable_if_t<
-			false == std::is_convertible_v<K&&, const_iterator>
-			&& false == std::is_convertible_v<K&&, iterator>
+		typename IsTransparentAndNotIterator = std::enable_if_t<
+			false == std::is_convertible_v<K&&, const_iterator> && false == std::is_convertible_v<K&&, iterator>,
+			typename C::is_transparent
 		>
 	>
 	size_type erase(const K& key_arg);
@@ -447,7 +450,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert rather than copying as it will de-duplicate (the slow way).
-	insert(begin(cont), end(cont));
+	this->insert(begin(cont), end(cont));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -458,7 +461,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert rather than copying as it will de-duplicate (the slow way).
-	insert(begin(cont), end(cont));
+	this->insert(begin(cont), end(cont));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -469,7 +472,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert rather than copying as it will de-duplicate (the slow way).
-	insert(begin(cont), end(cont));
+	this->insert(begin(cont), end(cont));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_flat_map(unsorted_unique_t, const container_type& cont)
@@ -512,7 +515,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{}
 {
 	// Use insert to de-duplicate (the slow way).
-	insert(first, last);
+	this->insert(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
@@ -521,7 +524,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{ alloc }
 {
 	// Use insert to de-duplicate (the slow way).
-	insert(first, last);
+	this->insert(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
@@ -530,7 +533,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{ alloc }
 {
 	// Use insert to de-duplicate (the slow way).
-	insert(first, last);
+	this->insert(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename HasIteratorCategory>
@@ -539,7 +542,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{}
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(first, last);
+	this->do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
@@ -548,7 +551,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{ alloc }
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(first, last);
+	this->do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename Allocator, typename HasIteratorCategory, typename UsesAllocator>
@@ -557,7 +560,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	, m_key_value_pairs{ alloc }
 {
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(first, last);
+	this->do_insert_back_without_checking_if_unique(first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_flat_map(std::initializer_list<value_type> init, const key_equal& eq)
@@ -567,7 +570,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert to de-duplicate (the slow way).
-	insert(begin(init), end(init));
+	this->insert(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -578,7 +581,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert to de-duplicate (the slow way).
-	insert(begin(init), end(init));
+	this->insert(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -589,7 +592,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Use insert to de-duplicate (the slow way).
-	insert(begin(init), end(init));
+	this->insert(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_flat_map(unsorted_unique_t, std::initializer_list<value_type> init, const key_equal& eq)
@@ -599,7 +602,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(begin(init), end(init));
+	this->do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -610,7 +613,7 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(begin(init), end(init));
+	this->do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename Allocator, typename UsesAllocator>
@@ -621,14 +624,14 @@ unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::unordered_adjacent_fla
 	using std::begin;
 	using std::end;
 	// Is unsorted_unique, insert blindly.
-	do_insert_back_without_checking_if_unique(begin(init), end(init));
+	this->do_insert_back_without_checking_if_unique(begin(init), end(init));
 }
 
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::operator=(const unordered_adjacent_flat_map& other)
 	-> unordered_adjacent_flat_map&
 {
-	get_equal() = other.get_equal();
+	this->get_equal() = other.get_equal();
 	m_key_value_pairs = other.m_key_value_pairs;
 	return *this;
 }
@@ -636,7 +639,7 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::operator=(unordered_adjacent_flat_map&& other) noexcept
 	-> unordered_adjacent_flat_map&
 {
-	get_equal() = std::move(other.get_equal());
+	this->get_equal() = std::move(other.get_equal());
 	m_key_value_pairs = std::move(other.m_key_value_pairs);
 	return *this;
 }
@@ -646,25 +649,29 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::at(const key_type& key_arg)
 	-> mapped_type&
 {
-	return this->at<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->at<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::at(const key_type& key_arg) const
 	-> const mapped_type&
 {
-	return this->at<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->at<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::operator[](const key_type& key_arg)
 	-> mapped_type&
 {
-	return this->operator[]<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->operator[]<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::operator[](key_type&& key_arg)
 	-> mapped_type&
 {
-	return this->operator[]<key_type&&, void, void>(std::move(key_arg));
+	using coopt_transparent = void;
+	return this->operator[]<key_type&&, key_equal, coopt_transparent>(std::move(key_arg));
 }
 
 // Element access (transparent):
@@ -673,7 +680,7 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::at(const K& key_arg)
 	-> mapped_type&
 {
-	const auto iter = find(key_arg);
+	const auto iter = this->find(key_arg);
 	using std::end;
 	using std::get;
 	if (iter.get() == end(m_key_value_pairs))
@@ -807,80 +814,84 @@ template <typename... Args>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(const key_type& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	return do_transparent_emplace_back_if_unique<const key_type&>(key_arg, std::forward<Args>(args)...);
+	return this->do_transparent_emplace_back_if_unique<const key_type&>(key_arg, std::forward<Args>(args)...);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename... Args>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(key_type&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	return do_transparent_emplace_back_if_unique<key_type&&>(std::move(key_arg), std::forward<Args>(args)...);
+	return this->do_transparent_emplace_back_if_unique<key_type&&>(std::move(key_arg), std::forward<Args>(args)...);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename... Args>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(const const_iterator hint, const key_type& key_arg, Args&&... args)
 	-> iterator
 {
-	return do_transparent_emplace_back_if_unique<const key_type&>(key_arg, std::forward<Args>(args)...).first;
+	return this->do_transparent_emplace_back_if_unique<const key_type&>(key_arg, std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename... Args>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(const const_iterator hint, key_type&& key_arg, Args&&... args)
 	-> iterator
 {
-	return do_transparent_emplace_back_if_unique<key_type&&>(std::move(key_arg), std::forward<Args>(args)...).first;
+	return this->do_transparent_emplace_back_if_unique<key_type&&>(std::move(key_arg), std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const value_type& value)
 	-> std::pair<iterator, bool>
 {
-	return emplace(value);
+	return this->emplace(value);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(value_type&& value)
 	-> std::pair<iterator, bool>
 {
-	return emplace(std::move(value));
+	return this->emplace(std::move(value));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const_iterator hint, const value_type& value)
 	-> iterator
 {
-	return emplace_hint(hint, value);
+	return this->emplace_hint(hint, value);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const_iterator hint, value_type&& value)
 	-> iterator
 {
-	return emplace_hint(hint, std::move(value));
+	return this->emplace_hint(hint, std::move(value));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename M>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(const key_type& key_arg, M&& mapped_arg)
 	-> std::pair<iterator, bool>
 {
-	return this->insert_or_assign<const key_type&, decltype(mapped_arg), void, void>(key_arg, std::forward<M>(mapped_arg));
+	using coopt_transparent = void;
+	return this->insert_or_assign<const key_type&, decltype(mapped_arg), key_equal, coopt_transparent>(key_arg, std::forward<M>(mapped_arg));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename M>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(key_type&& key_arg, M&& mapped_arg)
 	-> std::pair<iterator, bool>
 {
-	return this->insert_or_assign<key_type&&, decltype(mapped_arg), void, void>(std::move(key_arg), std::forward<M>(mapped_arg));
+	using coopt_transparent = void;
+	return this->insert_or_assign<key_type&&, decltype(mapped_arg), key_equal, coopt_transparent>(std::move(key_arg), std::forward<M>(mapped_arg));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename M>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(const_iterator hint, const key_type& key_arg, M&& mapped_arg)
 	-> iterator
 {
-	return this->insert_or_assign<const key_type&, decltype(mapped_arg), void, void>(key_arg, std::forward<M>(mapped_arg)).first;
+	using coopt_transparent = void;
+	return this->insert_or_assign<const key_type&, decltype(mapped_arg), key_equal, coopt_transparent>(key_arg, std::forward<M>(mapped_arg)).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename M>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(const_iterator hint, key_type&& key_arg, M&& mapped_arg)
 	-> iterator
 {
-	return this->insert_or_assign<key_type&&, decltype(mapped_arg), void, void>(std::move(key_arg), std::forward<M>(mapped_arg)).first;
+	using coopt_transparent = void;
+	return this->insert_or_assign<key_type&&, decltype(mapped_arg), key_equal, coopt_transparent>(std::move(key_arg), std::forward<M>(mapped_arg)).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename InputIterator, typename HasIteratorCategory>
@@ -890,7 +901,7 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(InputItera
 	// preexisting & newly inserted elements.
 	while (first != last)
 	{
-		emplace(*(first++));
+		this->emplace(*(first++));
 	}
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
@@ -911,13 +922,13 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const unso
 		// This intentionally ignores preexisting elements as a rough heuristic
 		// to not over allocate when keys are duplicated. When pre_insert_size
 		// is zero, this will reserve enough for [first, last).
-		reserve(distance(first, last));
+		this->reserve(distance(first, last));
 	}
 	const size_type pre_insert_size{ m_key_value_pairs.size() };
 	while (first != last)
 	{
 		const auto key_value_last = next(begin(m_key_value_pairs), pre_insert_size);
-		if (do_find(get<0>(*first), begin(m_key_value_pairs), key_value_last) == key_value_last)
+		if (this->do_find(get<0>(*first), begin(m_key_value_pairs), key_value_last) == key_value_last)
 		{
 			m_key_value_pairs.emplace_back(*first);
 		}
@@ -929,14 +940,14 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(std::initi
 {
 	using std::begin;
 	using std::end;
-	insert(begin(init), end(init));
+	this->insert(begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert(const unsorted_unique_t, std::initializer_list<value_type> init)
 {
 	using std::begin;
 	using std::end;
-	insert(unsorted_unique, begin(init), end(init));
+	this->insert(unsorted_unique, begin(init), end(init));
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::extract() &&
@@ -953,7 +964,7 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::replace(container
 	}
 	catch (...)
 	{
-		clear();
+		this->clear();
 		throw;
 	}
 }
@@ -987,7 +998,8 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const key_type& key_arg)
 	-> size_type
 {
-	return this->erase<const key_type&, void, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->erase<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::swap(unordered_adjacent_flat_map& other)
@@ -995,7 +1007,7 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::swap(unordered_ad
 {
 	using std::swap;
 	// key_equal is allowed to throw, so it goes first.
-	swap(get_equal(), other.get_equal());
+	swap(this->get_equal(), other.get_equal());
 	swap(m_key_value_pairs, other.m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
@@ -1006,7 +1018,7 @@ void unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::clear() noexcept
 
 // Modifiers (transparent):
 template <typename Key, typename T, typename KeyEqual, typename Container>
-template <typename... Args>
+template <typename... Args, typename IsConstructible>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
@@ -1014,41 +1026,41 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::emplace(Args&&...
 	if constexpr (sizeof...(args) == 2)
 	{
 		// If possible, keep emplace a transparent operation.
-		return do_transparent_emplace_back_if_unique(std::forward<Args>(args)...);
+		return this->do_transparent_emplace_back_if_unique(std::forward<Args>(args)...);
 	}
 	else
 	{
 		value_type value{ std::forward<Args>(args)... };
-		return do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		return this->do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
-template <typename... Args>
-auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::emplace_hint(const const_iterator hint, Args&&... args)
+template <typename... Args, typename IsConstructible>
+auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::emplace_hint([[maybe_unused]] const const_iterator hint, Args&&... args)
 	-> iterator
 {
-	return emplace(std::forward<Args>(args)...).first;
+	return this->emplace(std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
-template <typename K, typename... Args, typename C, typename IsTransparent, typename IsConvertible>
+template <typename K, typename... Args, typename C, typename IsTransparentAndNotIterator>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(K&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	return do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...);
+	return this->do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
-template <typename K, typename... Args, typename C, typename IsTransparent, typename IsConvertible>
-auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace(const const_iterator hint, K&& key_arg, Args&&... args)
+template <typename K, typename... Args, typename C, typename IsTransparentAndNotIterator>
+auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::try_emplace([[maybe_unused]] const const_iterator hint, K&& key_arg, Args&&... args)
 	-> iterator
 {
-	return do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...).first;
+	return this->do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename M, typename C, typename IsTransparent>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(K&& key_arg, M&& mapped_arg)
 	-> std::pair<iterator, bool>
 {
-	const std::pair<iterator, bool> it_inserted = do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<M>(mapped_arg));
+	const std::pair<iterator, bool> it_inserted = this->do_transparent_emplace_back_if_unique(std::forward<K>(key_arg), std::forward<M>(mapped_arg));
 	if (it_inserted.second == false)
 	{
 		using std::get;
@@ -1061,10 +1073,11 @@ template <typename K, typename M, typename C, typename IsTransparent>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::insert_or_assign(const_iterator hint, K&& key_arg, M&& mapped_arg)
 	-> iterator
 {
-	return this->insert_or_assign<K, M, void, void>(std::forward<K>(key_arg), std::forward<M>(mapped_arg)).first;
+	using coopt_transparent = void;
+	return this->insert_or_assign<K, M, key_equal, coopt_transparent>(std::forward<K>(key_arg), std::forward<M>(mapped_arg)).first;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
-template <typename K, typename C, typename IsTransparent, typename IsConvertible>
+template <typename K, typename C, typename IsTransparentAndNotIterator>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const K& key_arg)
 	-> size_type
 {
@@ -1072,7 +1085,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const K& ke
 	using std::end;
 	using std::next;
 	const auto end_iter = end(m_key_value_pairs);
-	const auto iter = do_find(key_arg, begin(m_key_value_pairs), end_iter);
+	const auto iter = this->do_find(key_arg, begin(m_key_value_pairs), end_iter);
 	if (iter == end_iter)
 	{
 		return 0;
@@ -1103,36 +1116,42 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::find(const key_type& key_arg)
 	 -> iterator
 {
-	return this->find<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->find<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::find(const key_type& key_arg) const
 	-> const_iterator
 {
-	return this->find<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->find<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::count(const key_type& key_arg) const
 	-> size_type
 {
-	return this->count<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->count<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 bool unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::contains(const key_type& key_arg) const
 {
-	return this->count<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->contains<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const key_type& key_arg)
 	-> std::pair<iterator, iterator>
 {
-	return this->equal_range<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->equal_range<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const key_type& key_arg) const
 	-> std::pair<const_iterator, const_iterator>
 {
-	return this->equal_range<const key_type&, void, void>(key_arg);
+	using coopt_transparent = void;
+	return this->equal_range<const key_type&, key_equal, coopt_transparent>(key_arg);
 }
 
 // Lookup (transparent):
@@ -1143,7 +1162,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::find(const K& key
 {
 	using std::begin;
 	using std::end;
-	return iterator{ do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
+	return iterator{ this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1152,7 +1171,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::find(const K& key
 {
 	using std::begin;
 	using std::end;
-	return const_iterator{ do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
+	return const_iterator{ this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1161,7 +1180,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::count(const K& ke
 {
 	using std::begin;
 	using std::end;
-	return do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) != end(m_key_value_pairs) ? 1 : 0;
+	return this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) != end(m_key_value_pairs) ? 1 : 0;
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1169,14 +1188,14 @@ bool unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::contains(const K&
 {
 	using std::begin;
 	using std::end;
-	return do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) != end(m_key_value_pairs);
+	return this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs)) != end(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const K& key_arg)
 	-> std::pair<iterator, iterator>
 {
-	const iterator iter = find(key_arg);
+	const iterator iter = this->find(key_arg);
 	using std::get;
 	using std::end;
 	using std::next;
@@ -1187,7 +1206,7 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const K& key_arg) const
 	-> std::pair<const_iterator, const_iterator>
 {
-	const const_iterator iter = find(key_arg);
+	const const_iterator iter = this->find(key_arg);
 	using std::get;
 	using std::end;
 	using std::next;
@@ -1257,7 +1276,8 @@ template <typename Iterator>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_find(const key_type& key_arg, const Iterator first, const Iterator last) const
 	-> Iterator
 {
-	return this->do_find<const key_type&, Iterator, void, void>(key_arg, first, last);
+	using coopt_transparent = void;
+	return this->do_find<const key_type&, Iterator, key_equal, coopt_transparent>(key_arg, first, last);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename Iterator, typename C, typename IsTransparent>

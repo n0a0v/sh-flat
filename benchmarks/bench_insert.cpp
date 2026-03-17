@@ -83,7 +83,7 @@ struct insert_caller final
 	void operator()() const
 	{
 		std::size_t index = 0;
-		for (std::size_t size = 1; size <= 1024; size += std::min<std::size_t>(4u, size))
+		for (std::size_t size = 1; size <= 300; ++size)
 		{
 			const insert_parameters param
 			{

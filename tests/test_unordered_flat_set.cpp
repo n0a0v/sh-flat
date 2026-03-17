@@ -510,6 +510,14 @@ TEST(sh_unordered_flat_set, emplace_transparent)
 	x.emplace(two);
 	EXPECT_LE(1u, compared_normally);
 	EXPECT_LE(1u, compared_transparently);
+
+	x.emplace(4, 'c');
+	EXPECT_LE(2u, compared_normally);
+	EXPECT_LE(1u, compared_transparently);
+
+	EXPECT_TRUE(x.contains("one"));
+	EXPECT_TRUE(x.contains("two"));
+	EXPECT_TRUE(x.contains("cccc"));
 }
 TEST(sh_unordered_flat_set, emplace_hint)
 {

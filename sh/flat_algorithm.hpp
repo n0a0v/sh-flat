@@ -79,6 +79,18 @@ namespace sh::flat
 	 */
 	template <typename T> constexpr bool has_reserve_v = has_reserve<T>::value;
 
+	/**	Check if a given type has an is_transparent member type.
+	 *	@tparam T The type to check for a typename T::is_transparent.
+	 */
+	template <typename T, typename IsVoid = void> struct has_is_transparent : std::false_type {};
+	template <typename T> struct has_is_transparent<T,
+		std::void_t<typename T::is_transparent>
+	> : std::true_type {};
+	/**	True if a given type has an is_transparent member type.
+	 *	@tparam T The type to check for a typename T::is_transparent.
+	 */
+	template <typename T> constexpr bool has_is_transparent_v = has_is_transparent<T>::value;
+
 	/**	Like std::adjacent_find but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
 	 *	@param first The first iterator in a sorted range [first, last).
 	 *	@param last The last iterator in a sorted range [first, last).

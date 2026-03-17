@@ -899,21 +899,28 @@ TEST(sh_unordered_adjacent_flat_map, emplace)
 TEST(sh_unordered_adjacent_flat_map, emplace_transparent)
 {
 	std::uint32_t compared_normally = 0, compared_transparently = 0;
-	unordered_adjacent_flat_map<int, int, equal_to_transparent<int>> x
+	unordered_adjacent_flat_map<std::string, int, equal_to_transparent<std::string>> x
 	{
-		equal_to_transparent<int>{ compared_normally, compared_transparently }
+		equal_to_transparent<std::string>{ compared_normally, compared_transparently }
 	};
 
-	x.emplace(1, 100);
+	x.emplace("1", 100);
 	EXPECT_EQ(compared_normally, 0u);
 	EXPECT_EQ(compared_transparently, 0u);
 
-	x.emplace(1, 100);
+	x.emplace("1", 200);
+	EXPECT_EQ(compared_normally, 0u);
+	EXPECT_GE(compared_transparently, 1u);
+	compared_transparently = 0;
+
+	x.emplace(std::string{ "1" }, 200);
 	EXPECT_GE(compared_normally, 1u);
 	EXPECT_EQ(compared_transparently, 0u);
+	compared_normally = 0;
 
-	x.emplace(static_cast<unsigned short>(2), 200);
-	EXPECT_GE(compared_transparently, 1u);
+	x.emplace(std::piecewise_construct, std::tuple{ 1, '1' }, std::tuple{ 200 });
+	EXPECT_GE(compared_normally, 1u);
+	EXPECT_EQ(compared_transparently, 0u);
 }
 TEST(sh_unordered_adjacent_flat_map, emplace_hint)
 {
