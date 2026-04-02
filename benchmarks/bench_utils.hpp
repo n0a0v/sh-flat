@@ -541,10 +541,11 @@ namespace bench
 	template <typename Object>
 	void for_each_common_map_permutation(Object&& obj)
 	{
-		using big_type = bench::big<std::uint64_t, 12>;
 //		obj.template operator()<std::uint16_t, std::uint16_t>();
 //		obj.template operator()<std::uint32_t, std::uint32_t>();
 		obj.template operator()<std::uint64_t, std::uint64_t>();
+
+//		using big_type = bench::big<std::uint64_t, 12>;
 //		obj.template operator()<std::uint32_t, big_type>();
 	}
 } // namespace bench

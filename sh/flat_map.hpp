@@ -419,6 +419,8 @@ private:
 	KeyIterator do_lower_bound(const K& key_arg, const KeyIterator first, const KeyIterator last) const;
 	template <typename K, typename... Args>
 	std::pair<iterator, bool> do_transparent_emplace_if_unique(K&& key_arg, Args&&... args);
+	template <typename K, typename... Args>
+	iterator do_transparent_emplace_hint_if_unique(const_iterator hint, K&& key_arg, Args&&... args);
 	template <typename InputIterator>
 	void do_insert_back_without_sorting(InputIterator first, InputIterator last);
 	template <typename Iterator>
@@ -508,9 +510,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -524,9 +526,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -540,9 +542,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -606,9 +608,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	// Add unsorted and assume unique because of sorted_unique tag.
 	this->do_insert_back_without_sorting(first, last);
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -622,9 +624,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	// Add unsorted and assume unique because of sorted_unique tag.
 	this->do_insert_back_without_sorting(first, last);
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -638,9 +640,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	// Add unsorted and assume unique because of sorted_unique tag.
 	this->do_insert_back_without_sorting(first, last);
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -654,9 +656,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initiali
 	// Add unsorted and then sort & unique.
 	this->do_insert_back_without_sorting(begin(init), end(init));
 	this->sort_containers_and_erase_duplicates();
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -671,9 +673,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initiali
 	// Add unsorted and then sort & unique.
 	this->do_insert_back_without_sorting(begin(init), end(init));
 	this->sort_containers_and_erase_duplicates();
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -688,9 +690,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(std::initiali
 	// Add unsorted and then sort & unique.
 	this->do_insert_back_without_sorting(begin(init), end(init));
 	sort_containers_and_erase_duplicates();
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -703,9 +705,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::end;
 	// Add unsorted and then sort & unique.
 	this->do_insert_back_without_sorting(begin(init), end(init));
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -718,9 +720,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::begin;
 	using std::end;
 	this->do_insert_back_without_sorting(begin(init), end(init));
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -733,9 +735,9 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(sorted_unique
 	using std::begin;
 	using std::end;
 	this->do_insert_back_without_sorting(begin(init), end(init));
-	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), get_less()),
+	SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
 		"Keys tagged with sorted_unique_t must already be sorted.");
-	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), get_less()) == end(m_keys),
+	SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
 		"Keys tagged with sorted_unique_t must already be unique.");
 }
 
@@ -845,62 +847,72 @@ template <typename Key, typename T, typename Compare, typename KeyContainer, typ
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::begin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cbegin(), m_values.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_keys), cbegin(m_values) };
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::end() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cend(), m_values.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_keys), cend(m_values) };
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::cbegin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cbegin(), m_values.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_keys), cbegin(m_values) };
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::cend() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cend(), m_values.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_keys), cend(m_values) };
 }
 
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::rbegin() noexcept
 	-> reverse_iterator
 {
-	return m_keys.rbegin();
+	using std::rbegin;
+	return rbegin(m_keys);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::rend() noexcept
 	-> reverse_iterator
 {
-	return m_keys.rend();
+	using std::rend;
+	return rend(m_keys);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::rbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crbegin();
+	using std::crbegin;
+	return crbegin(m_keys);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::rend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crend();
+	using std::crend;
+	return crend(m_keys);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::crbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crbegin();
+	using std::crbegin;
+	return crbegin(m_keys);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::crend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crend();
+	using std::crend;
+	return crend(m_keys);
 }
 
 // Capacity:
@@ -923,7 +935,8 @@ template <typename Key, typename T, typename Compare, typename KeyContainer, typ
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::max_size() const noexcept
 	-> size_type
 {
-	return std::min(m_keys.max_size(), m_values.max_size());
+	using std::min;
+	return min(m_keys.max_size(), m_values.max_size());
 }
 
 // Modifiers:
@@ -1020,8 +1033,6 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const Inpu
 	using std::next;
 	using std::sort;
 	using std::inplace_merge;
-	using std::unique;
-	using std::get;
 	const size_type pre_insert_size{ m_keys.size() };
 	this->do_insert_back_without_sorting(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -1032,7 +1043,7 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const Inpu
 	// [middle_iter, last_iter) are the unsorted elements appended by do_insert_back_without_sorting.
 	const auto last_iter = flat::iterator_pair{ end(m_keys), end(m_values) };
 	// [middle_iter, last_iter) must be sorted (not stable!).
-	const value_compare comp = value_comp();
+	const value_compare comp = this->value_comp();
 	sort(middle_iter, last_iter, comp);
 	// Merge the two sorted ranges together (stable sort).
 	inplace_merge(first_iter, middle_iter, last_iter, comp);
@@ -1045,25 +1056,35 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const sort
 {
 	using std::begin;
 	using std::end;
-	using std::next;
-	using std::inplace_merge;
-	using std::unique;
-	using std::get;
 	const size_type pre_insert_size{ m_keys.size() };
 	this->do_insert_back_without_sorting(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
-	// [first, middle) were sorted prior to calling do_insert_back_without_sorting.
-	const auto first_iter = flat::iterator_pair{ begin(m_keys), begin(m_values) };
-	const auto middle_iter = next(first_iter, pre_insert_size);
-	// [middle, last) are the unsorted elements appended by do_insert_back_without_sorting.
-	// [middle, last) is already sorted, per the sorted_unique_t tag.
-	const auto last_iter = flat::iterator_pair{ end(m_keys), end(m_values) };
-	// Merge the two sorted ranges together (stable sort).
-	const value_compare comp = value_comp();
-	inplace_merge(first_iter, middle_iter, last_iter, comp);
-	// Deduplicate elements post-merge.
-	this->erase_sorted_duplicates(first_iter, last_iter, comp);
+	// No need to merge & unique as incoming elements are sorted & unique and
+	// there were none previously.
+	if (pre_insert_size != 0)
+	{
+		using std::next;
+		using std::inplace_merge;
+		// [first, middle) were sorted prior to calling do_insert_back_without_sorting.
+		const auto first_iter = flat::iterator_pair{ begin(m_keys), begin(m_values) };
+		const auto middle_iter = next(first_iter, pre_insert_size);
+		// [middle, last) are the unsorted elements appended by do_insert_back_without_sorting.
+		// [middle, last) is already sorted, per the sorted_unique_t tag.
+		const auto last_iter = flat::iterator_pair{ end(m_keys), end(m_values) };
+		// Merge the two sorted ranges together (stable sort).
+		const value_compare comp = this->value_comp();
+		inplace_merge(first_iter, middle_iter, last_iter, comp);
+		// Deduplicate elements post-merge.
+		this->erase_sorted_duplicates(first_iter, last_iter, comp);
+	}
+	else
+	{
+		SH_FLAT_ASSERT(std::is_sorted(begin(m_keys), end(m_keys), this->get_less()),
+			"Keys tagged with sorted_unique_t must already be sorted.");
+		SH_FLAT_ASSERT(flat::less_adjacent_find(begin(m_keys), end(m_keys), this->get_less()) == end(m_keys),
+			"Keys tagged with sorted_unique_t must already be unique.");
+	}
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(std::initializer_list<value_type> init)
@@ -1155,16 +1176,26 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::emplace(Args&&...
 	}
 	else
 	{
-		value_type value{ std::forward<Args>(args)... };
+		value_type value(std::forward<Args>(args)...);
 		return this->do_transparent_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename... Args, typename IsConstructible>
-auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::emplace_hint([[maybe_unused]] const const_iterator hint, Args&&... args)
+auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::emplace_hint(const const_iterator hint, Args&&... args)
 	-> iterator
 {
-	return this->emplace(std::forward<Args>(args)...).first;
+	using std::get;
+	if constexpr (sizeof...(args) == 2)
+	{
+		// If possible, keep emplace a transparent operation.
+		return this->do_transparent_emplace_hint_if_unique(hint, std::forward<Args>(args)...);
+	}
+	else
+	{
+		value_type value(std::forward<Args>(args)...);
+		return this->do_transparent_emplace_hint_if_unique(hint, get<0>(std::move(value)), get<1>(std::move(value)));
+	}
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename K, typename... Args, typename C, typename IsTransparentAndNotIterator>
@@ -1213,7 +1244,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::erase(const K& ke
 	{
 		return 0;
 	}
-	erase(it);
+	this->erase(it);
 	return 1;
 }
 
@@ -1424,7 +1455,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::equal_range(const
 	using std::next;
 	using std::end;
 	const iterator iter = this->find(key_arg);
-	return std::make_pair(iter, get<0>(iter) == end(m_keys) ? iter : next(iter));
+	return { iter, get<0>(iter) == end(m_keys) ? iter : next(iter) };
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename K, typename C, typename IsTransparent>
@@ -1435,7 +1466,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::equal_range(const
 	using std::next;
 	using std::end;
 	const const_iterator iter = this->find(key_arg);
-	return std::make_pair(iter, get<0>(iter) == end(m_keys) ? iter : next(iter));
+	return { iter, get<0>(iter) == end(m_keys) ? iter : next(iter) };
 }
 
 // Observers:
@@ -1520,11 +1551,48 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_em
 	const iterator iter = this->lower_bound(key_arg);
 	if (get<0>(iter) == end(m_keys) || this->get_less()(key_arg, get<0>(*iter)))
 	{
+		// Desynchronization occurs if m_keys emplaces but m_values throws.
 		const auto key_iter = m_keys.emplace(get<0>(iter), std::forward<K>(key_arg));
 		const auto value_iter = m_values.emplace(get<1>(iter), std::forward<Args>(args)...);
-		return std::make_pair(iterator{ key_iter, value_iter }, true);
+		return { iterator{ key_iter, value_iter }, true };
 	}
-	return std::make_pair(iter, false);
+	return { iter, false };
+}
+template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
+template <typename K, typename... Args>
+auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_emplace_hint_if_unique(const const_iterator hint, K&& key_arg, Args&&... args)
+	-> iterator
+{
+	using std::begin;
+	using std::end;
+	using std::get;
+	using std::prev;
+	if (m_keys.empty() == false)
+	{
+		const auto key_hint = get<0>(hint);
+		const auto& less = this->get_less();
+		if (key_hint == end(m_keys) && less(m_keys.back(), key_arg))
+		{
+			// Hint is at the end and the back is less than the given key.
+			const auto value_hint = get<1>(hint);
+			// Desynchronization occurs if m_keys emplaces but m_values throws.
+			const auto key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
+			const auto value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			return iterator{ key_iter, value_iter };
+		}
+		else if ((key_hint == begin(m_keys) || less(*prev(key_hint), key_arg))
+			&& less(key_arg, *key_hint))
+		{
+			// Hint is at the end and the back is less than the given key.
+			const auto value_hint = get<1>(hint);
+			// Desynchronization occurs if m_keys emplaces but m_values throws.
+			const auto key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
+			const auto value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			return iterator{ key_iter, value_iter };
+		}
+	}
+	// Fallback to binary search emplacement.
+	return this->do_transparent_emplace_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename InputIterator>
@@ -1567,7 +1635,7 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::sort_containers_a
 		"Key & value containers expected to be the same size.");
 	auto first = flat::iterator_pair{ begin(m_keys), begin(m_values) };
 	auto last = flat::iterator_pair{ end(m_keys), end(m_values) };
-	const value_compare comp = value_comp();
+	const value_compare comp = this->value_comp();
 	sort(first, last, comp);
 	this->erase_sorted_duplicates(first, last, comp);
 }

@@ -731,62 +731,72 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::begin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_key_value_pairs.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_key_value_pairs) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::end() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_key_value_pairs.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_key_value_pairs) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::cbegin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_key_value_pairs.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_key_value_pairs) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::cend() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_key_value_pairs.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_key_value_pairs) };
 }
 
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::rbegin() noexcept
 	-> reverse_iterator
 {
-	return m_key_value_pairs.rbegin();
+	using std::rbegin;
+	return rbegin(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::rend() noexcept
 	-> reverse_iterator
 {
-	return m_key_value_pairs.rend();
+	using std::rend;
+	return rend(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::rbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_key_value_pairs.crbegin();
+	using std::crbegin;
+	return crbegin(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::rend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_key_value_pairs.crend();
+	using std::crend;
+	return crend(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::crbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_key_value_pairs.crbegin();
+	using std::crbegin;
+	return crbegin(m_key_value_pairs);
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::crend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_key_value_pairs.crend();
+	using std::crend;
+	return crend(m_key_value_pairs);
 }
 
 // Capacity:
@@ -973,11 +983,13 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const
 	-> iterator
 {
 	{
+		using std::begin;
+		using std::cbegin;
 		using std::distance;
 		using std::end;
 		using std::next;
-		const difference_type pos_index{ distance(m_key_value_pairs.cbegin(), pos.get()) };
-		const typename container_type::iterator pos_iter = next(m_key_value_pairs.begin(), pos_index);
+		const difference_type pos_index{ distance(cbegin(m_key_value_pairs), pos.get()) };
+		const typename container_type::iterator pos_iter = next(begin(m_key_value_pairs), pos_index);
 		if (next(pos_iter) != end(m_key_value_pairs))
 		{
 			*pos_iter = std::move(m_key_value_pairs.back());
@@ -986,7 +998,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const
 		}
 	}
 	m_key_value_pairs.pop_back();
-	return end();
+	return this->end();
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const_iterator first, const const_iterator last)
@@ -1030,7 +1042,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::emplace(Args&&...
 	}
 	else
 	{
-		value_type value{ std::forward<Args>(args)... };
+		value_type value(std::forward<Args>(args)...);
 		return this->do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
@@ -1199,7 +1211,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const
 	using std::get;
 	using std::end;
 	using std::next;
-	return std::make_pair(iter, iter.get() == end(m_key_value_pairs) ? iter : next(iter));
+	return { iter, iter.get() == end(m_key_value_pairs) ? iter : next(iter) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1210,7 +1222,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const
 	using std::get;
 	using std::end;
 	using std::next;
-	return std::make_pair(iter, get<0>(iter) == end(m_key_value_pairs) ? iter : next(iter));
+	return { iter, get<0>(iter) == end(m_key_value_pairs) ? iter : next(iter) };
 }
 
 // Observers:
@@ -1304,15 +1316,15 @@ template <typename K, typename... Args>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_transparent_emplace_back_if_unique(K&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	const iterator iter = find(key_arg);
+	const iterator iter = this->find(key_arg);
 	using std::end;
 	using std::prev;
 	if (iter.get() == end(m_key_value_pairs))
 	{
 		m_key_value_pairs.emplace_back(std::forward<K>(key_arg), mapped_type{ std::forward<Args>(args)... });
-		return std::make_pair(iterator{ prev(end(m_key_value_pairs)) }, true);
+		return { iterator{ prev(end(m_key_value_pairs)) }, true };
 	}
-	return std::make_pair(iter, false);
+	return { iter, false };
 }
 
 template <typename Key, typename T, typename KeyEqual, typename Container>

@@ -17,3 +17,12 @@ target_include_directories(run-tests
 target_link_libraries(run-tests
 	gtest
 )
+if(MSVC)
+	target_compile_options(run-tests
+		PRIVATE /wd4068
+	)
+else()
+	target_compile_options(run-tests
+		PRIVATE -Wno-unknown-pragmas
+	)
+endif()

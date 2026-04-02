@@ -493,7 +493,11 @@ TEST(sh_flat_map, operator_assign)
 		ASSERT_EQ(x.size(), 1u);
 		ASSERT_TRUE(x.contains(1));
 
+		// Self copy:
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
 		x = x;
+#pragma clang diagnostic pop
 		EXPECT_FALSE(x.empty());
 		EXPECT_EQ(x.size(), 1u);
 		EXPECT_TRUE(x.contains(1));
@@ -514,7 +518,11 @@ TEST(sh_flat_map, operator_assign_move)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_EQ(y.at(1), "one");
 
+	// Self move:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 	y = std::move(y);
+#pragma GCC diagnostic pop
 }
 TEST(sh_flat_map, key_comp)
 {
@@ -905,19 +913,66 @@ TEST(sh_flat_map, emplace_transparent)
 TEST(sh_flat_map, emplace_hint)
 {
 	using std::get;
-	flat_map<int, std::string> x;
-
-	const auto hint = x.try_emplace(1, "one");
-	ASSERT_TRUE(hint.second);
-	EXPECT_EQ(get<0>(*hint.first), 1);
-	EXPECT_EQ(get<1>(*hint.first), "one");
-
+	flat_map<std::string, int> x;
 	{
-		const auto it = x.emplace_hint(hint.first, 2, "two");
-		EXPECT_EQ(get<0>(*it), 2);
-		EXPECT_EQ(get<1>(*it), "two");
+		// incorrect hint (too early)
+		const auto it = x.emplace_hint(x.begin(), "a", 1);
+		EXPECT_EQ(get<0>(*it), "a");
+		EXPECT_EQ(get<1>(*it), 1);
+		EXPECT_EQ(x.size(), 1u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1} }));
 	}
-	ASSERT_EQ(x.size(), 2u);
+	{
+		const auto it = x.emplace_hint(x.end(), "a", 2);
+		EXPECT_EQ(get<0>(*it), "a");
+		EXPECT_EQ(get<1>(*it), 1);
+		EXPECT_EQ(x.size(), 1u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1} }));
+	}
+	{
+		// incorrect hint (too early)
+		const auto it = x.emplace_hint(x.begin(), "e", 5);
+		EXPECT_EQ(get<0>(*it), "e");
+		EXPECT_EQ(get<1>(*it), 5);
+		EXPECT_EQ(x.size(), 2u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"e",5} }));
+	}
+	{
+		const auto it = x.emplace_hint(x.find("e"), "b", 2);
+		EXPECT_EQ(get<0>(*it), "b");
+		EXPECT_EQ(get<1>(*it), 2);
+		EXPECT_EQ(x.size(), 3u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"e",5} }));
+	}
+	{
+		// incorrect hint (too late)
+		const auto it = x.emplace_hint(x.end(), "d", 4);
+		EXPECT_EQ(get<0>(*it), "d");
+		EXPECT_EQ(get<1>(*it), 4);
+		EXPECT_EQ(x.size(), 4u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"d",4}, {"e",5} }));
+	}
+	{
+		const auto it = x.emplace_hint(x.find("d"), "c", 3);
+		EXPECT_EQ(get<0>(*it), "c");
+		EXPECT_EQ(get<1>(*it), 3);
+		EXPECT_EQ(x.size(), 5u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5} }));
+	}
+	{
+		const auto it = x.emplace_hint(x.end(), "f", 6);
+		EXPECT_EQ(get<0>(*it), "f");
+		EXPECT_EQ(get<1>(*it), 6);
+		EXPECT_EQ(x.size(), 6u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5}, {"f",6} }));
+	}
+	{
+		const auto it = x.emplace_hint(x.begin(), "9", 0);
+		EXPECT_EQ(get<0>(*it), "9");
+		EXPECT_EQ(get<1>(*it), 0);
+		EXPECT_EQ(x.size(), 7u);
+		EXPECT_EQ(x, (decltype(x){ {"9",0}, {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5}, {"f",6} }));
+	}
 }
 TEST(sh_flat_map, try_emplace)
 {

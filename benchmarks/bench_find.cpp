@@ -88,8 +88,10 @@ struct find_caller final
 		{
 			const find_parameters param
 			{
-				/* repetitions: */ 16,
-				/* operations:  */ 16'000,
+				{
+					/* repetitions: */ 16,
+					/* operations:  */ 16'000,
+				},
 				/* reserve:     */ size,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,

@@ -86,8 +86,10 @@ struct eraseall_caller final
 		{
 			const eraseall_parameters param
 			{
-				/* repetitions: */ 32,
-				/* operations:  */ 2,
+				{
+					/* repetitions: */ 32,
+					/* operations:  */ 2,
+				},
 				/* reserve:     */ size,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,

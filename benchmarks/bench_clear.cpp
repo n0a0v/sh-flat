@@ -88,8 +88,10 @@ struct clear_caller final
 		{
 			const clear_parameters param
 			{
-				/* repetitions: */ 16,
-				/* operations:  */ 2,
+				{
+					/* repetitions: */ 16,
+					/* operations:  */ 2,
+				},
 				/* reserve:     */ size,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,

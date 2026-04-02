@@ -87,8 +87,10 @@ struct insert_caller final
 		{
 			const insert_parameters param
 			{
-				/* repetitions: */ 32,
-				/* operations:  */ size,
+				{
+					/* repetitions: */ 32,
+					/* operations:  */ size,
+				},
 				/* reserve:     */ (size * 4) / 3,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,

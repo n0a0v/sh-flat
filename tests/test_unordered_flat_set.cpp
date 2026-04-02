@@ -382,7 +382,11 @@ TEST(sh_unordered_flat_set, operator_assign)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains(1));
 
+	// Self copy:
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
 	y = y;
+#pragma clang diagnostic pop
 	EXPECT_FALSE(y.empty());
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains(1));
@@ -401,7 +405,11 @@ TEST(sh_unordered_flat_set, operator_assign_move)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains("one"));
 
+	// Self move:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 	y = std::move(y);
+#pragma GCC diagnostic pop
 }
 TEST(sh_unordered_flat_set, begin_end)
 {
@@ -749,7 +757,7 @@ TEST(sh_unordered_flat_set, erase_key)
 	ASSERT_EQ(x.size(), 4u);
 	for (int i = 1; i <= 4; ++i)
 	{
-		auto it = x.erase(i);
+		[[maybe_unused]] auto it = x.erase(i);
 	}
 	EXPECT_EQ(x.size(), 0u);
 	EXPECT_TRUE(x.empty());

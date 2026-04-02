@@ -86,12 +86,14 @@ struct erase_caller final
 		{
 			const erase_parameters param
 			{
-				/* repetitions: */ 16,
-				/* operations:  */ size,
+				{
+					/* repetitions: */ 16,
+					/* operations:  */ size,
+				},
 				/* reserve:     */ size,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,
-				/* fill skip:   */ 0
+				/* fill skip:   */ 0,
 			};
 			std::cout << '#' << index++ << ": ";
 			bench::map_test_group g{ param };

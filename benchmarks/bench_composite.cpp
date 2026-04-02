@@ -126,12 +126,16 @@ struct composite_caller final
 		{
 			const composite_parameters param
 			{
-				/* repetitions: */ 16,
-				/* operations:  */ 16'000,
-				/* reserve:     */ size,
-				/* key modulo:  */ 0,
-				/* fill size:   */ size,
-				/* fill skip:   */ 0,
+				{
+					{
+						/* repetitions: */ 16,
+						/* operations:  */ 16'000,
+					},
+					/* reserve:     */ size,
+					/* key modulo:  */ 0,
+					/* fill size:   */ size,
+					/* fill skip:   */ 0,
+				},
 				/* insert: */      2,
 				/* find:   */      12,
 				/* erase:  */      2,

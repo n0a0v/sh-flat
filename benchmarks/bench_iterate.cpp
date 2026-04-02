@@ -64,7 +64,7 @@ public:
 			bench::map_result result;
 
 			result.size(this->m_template.size());
-			for (const auto& [key, value] : this->m_template)
+			for ([[maybe_unused]] const auto& [key, value] : this->m_template)
 			{
 				result.find(true);
 			}
@@ -87,8 +87,10 @@ struct iterate_caller final
 		{
 			const iterate_parameters param
 			{
-				/* repetitions: */ 32,
-				/* operations:  */ 1,
+				{
+					/* repetitions: */ 32,
+					/* operations:  */ 1,
+				},
 				/* reserve:     */ size,
 				/* key modulo:  */ 0,
 				/* fill size:   */ size,

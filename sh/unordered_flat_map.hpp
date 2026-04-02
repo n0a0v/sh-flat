@@ -746,9 +746,9 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::at(const K& key_arg)
 	-> mapped_type&
 {
-	const auto iter = this->find(key_arg);
 	using std::get;
 	using std::end;
+	const auto iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "unordered_flat_map::at" };
@@ -760,9 +760,9 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::at(const K& key_arg) const
 	-> const mapped_type&
 {
-	const auto iter = find(key_arg);
 	using std::get;
 	using std::end;
+	const auto iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "unordered_flat_map::at" };
@@ -797,62 +797,72 @@ template <typename Key, typename T, typename KeyEqual, typename KeyContainer, ty
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::begin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cbegin(), m_values.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_keys), m_values.cbegin() };
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::end() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cend(), m_values.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_keys), m_values.cend() };
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::cbegin() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cbegin(), m_values.cbegin() };
+	using std::cbegin;
+	return const_iterator{ cbegin(m_keys), m_values.cbegin() };
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::cend() const noexcept
 	-> const_iterator
 {
-	return const_iterator{ m_keys.cend(), m_values.cend() };
+	using std::cend;
+	return const_iterator{ cend(m_keys), m_values.cend() };
 }
 
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::rbegin() noexcept
 	-> reverse_iterator
 {
-	return m_keys.rbegin();
+	using std::rbegin;
+	return rbegin(m_keys);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::rend() noexcept
 	-> reverse_iterator
 {
-	return m_keys.rend();
+	using std::rend;
+	return rend(m_keys);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::rbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crbegin();
+	using std::crbegin;
+	return crbegin(m_keys);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::rend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crend();
+	using std::crend;
+	return crend(m_keys);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::crbegin() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crbegin();
+	using std::crbegin;
+	return crbegin(m_keys);
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::crend() const noexcept
 	-> const_reverse_iterator
 {
-	return m_keys.crend();
+	using std::crend;
+	return crend(m_keys);
 }
 
 // Capacity:
@@ -875,7 +885,8 @@ template <typename Key, typename T, typename KeyEqual, typename KeyContainer, ty
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::max_size() const noexcept
 	-> size_type
 {
-	return std::min(m_keys.max_size(), m_values.max_size());
+	using std::min;
+	return min(m_keys.max_size(), m_values.max_size());
 }
 
 // Modifiers:
@@ -1048,11 +1059,12 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(
 	-> iterator
 {
 	{
+		using std::cbegin;
 		using std::distance;
 		using std::end;
 		using std::get;
 		using std::next;
-		const difference_type pos_index{ distance(m_keys.cbegin(), get<0>(pos)) };
+		const difference_type pos_index{ distance(cbegin(m_keys), get<0>(pos)) };
 		const typename key_container_type::iterator key_iter = next(m_keys.begin(), pos_index);
 		if (next(key_iter) != end(m_keys))
 		{
@@ -1068,8 +1080,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(
 	// Desynchronization occurs if m_keys pops but m_values throws.
 	m_keys.pop_back();
 	m_values.pop_back();
-	return end();
-
+	return this->end();
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(const const_iterator first, const const_iterator last)
@@ -1117,7 +1128,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::emplac
 	}
 	else
 	{
-		value_type value{ std::forward<Args>(args)... };
+		value_type value(std::forward<Args>(args)...);
 		return this->do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
@@ -1310,7 +1321,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::equal_
 	using std::get;
 	using std::end;
 	using std::next;
-	return std::make_pair(iter, get<0>(iter) == end(m_keys) ? iter : next(iter));
+	return { iter, get<0>(iter) == end(m_keys) ? iter : next(iter) };
 }
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 template <typename K, typename C, typename IsTransparent>
@@ -1321,7 +1332,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::equal_
 	using std::get;
 	using std::end;
 	using std::next;
-	return std::make_pair(iter, get<0>(iter) == end(m_keys) ? iter : next(iter));
+	return { iter, get<0>(iter) == end(m_keys) ? iter : next(iter) };
 }
 
 // Observers:
@@ -1402,7 +1413,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_fin
 	-> KeyIterator
 {
 	using std::find_if;
-	auto& equal = get_equal();
+	auto& equal = this->get_equal();
 	return find_if(first, last,
 		[&key_arg, &equal](const key_type& key)
 	{
@@ -1436,7 +1447,7 @@ template <typename K, typename... Args>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_transparent_emplace_back_if_unique(K&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	const iterator iter = find(key_arg);
+	const iterator iter = this->find(key_arg);
 	using std::get;
 	using std::end;
 	using std::prev;
@@ -1445,9 +1456,9 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_tra
 		// Desynchronization occurs if m_keys emplaces but m_values throws.
 		m_keys.emplace_back(std::forward<K>(key_arg));
 		m_values.emplace_back(std::forward<Args>(args)...);
-		return std::make_pair(iterator{ prev(end(m_keys)), prev(end(m_values)) }, true);
+		return { iterator{ prev(end(m_keys)), prev(end(m_values)) }, true };
 	}
-	return std::make_pair(iter, false);
+	return { iter, false };
 }
 
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>

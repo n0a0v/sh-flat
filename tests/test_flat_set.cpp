@@ -382,7 +382,11 @@ TEST(sh_flat_set, operator_assign_copy)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains(1));
 
+	// Self copy:
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
 	y = y;
+#pragma clang diagnostic pop
 	EXPECT_FALSE(y.empty());
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains(1));
@@ -401,7 +405,11 @@ TEST(sh_flat_set, operator_assign_move)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_TRUE(y.contains("one"));
 
+	// Self move:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 	y = std::move(y);
+#pragma GCC diagnostic pop
 }
 TEST(sh_flat_set, begin_end)
 {
@@ -522,16 +530,55 @@ TEST(sh_flat_set, emplace_transparent)
 TEST(sh_flat_set, emplace_hint)
 {
 	flat_set<std::string> x;
-
-	const auto hint = x.emplace("one");
-	ASSERT_TRUE(hint.second);
-	EXPECT_EQ(*hint.first, "one");
-
 	{
-		const auto it = x.emplace_hint(hint.first, "two");
-		EXPECT_EQ(*it, "two");
+		// incorrect hint (too early)
+		const auto it = x.emplace_hint(x.begin(), "a");
+		EXPECT_EQ(*it, "a");
+		EXPECT_EQ(x.size(), 1u);
 	}
-	ASSERT_EQ(x.size(), 2u);
+	{
+		const auto it = x.emplace_hint(x.end(), "a");
+		EXPECT_EQ(*it, "a");
+		EXPECT_EQ(x.size(), 1u);
+	}
+	{
+		// incorrect hint (too early)
+		const auto it = x.emplace_hint(x.begin(), "e");
+		EXPECT_EQ(*it, "e");
+		EXPECT_EQ(x.size(), 2u);
+		EXPECT_EQ(x, (decltype(x){ "a", "e" }));
+	}
+	{
+		const auto it = x.emplace_hint(x.find("e"), "b");
+		EXPECT_EQ(*it, "b");
+		EXPECT_EQ(x.size(), 3u);
+		EXPECT_EQ(x, (decltype(x){ "a", "b", "e" }));
+	}
+	{
+		// incorrect hint (too late)
+		const auto it = x.emplace_hint(x.end(), "d");
+		EXPECT_EQ(*it, "d");
+		EXPECT_EQ(x.size(), 4u);
+		EXPECT_EQ(x, (decltype(x){ "a", "b", "d", "e" }));
+	}
+	{
+		const auto it = x.emplace_hint(x.find("d"), "c");
+		EXPECT_EQ(*it, "c");
+		EXPECT_EQ(x.size(), 5u);
+		EXPECT_EQ(x, (decltype(x){ "a", "b", "c", "d", "e" }));
+	}
+	{
+		const auto it = x.emplace_hint(x.end(), "f");
+		EXPECT_EQ(*it, "f");
+		EXPECT_EQ(x.size(), 6u);
+		EXPECT_EQ(x, (decltype(x){ "a", "b", "c", "d", "e", "f" }));
+	}
+	{
+		const auto it = x.emplace_hint(x.begin(), "9");
+		EXPECT_EQ(*it, "9");
+		EXPECT_EQ(x.size(), 7u);
+		EXPECT_EQ(x, (decltype(x){ "9", "a", "b", "c", "d", "e", "f" }));
+	}
 }
 TEST(sh_flat_set, insert_copy)
 {
@@ -749,7 +796,7 @@ TEST(sh_flat_set, erase_key)
 	ASSERT_EQ(x.size(), 4u);
 	for (int i = 1; i <= 4; ++i)
 	{
-		auto it = x.erase(i);
+		[[maybe_unused]] auto it = x.erase(i);
 	}
 	EXPECT_EQ(x.size(), 0u);
 	EXPECT_TRUE(x.empty());
@@ -859,6 +906,12 @@ TEST(sh_flat_set, count_transparent)
 		{ 1, 2 },
 		less_transparent<int>{ compared_normally, compared_transparently }
 	};
+
+#if !defined(NDEBUG)
+	// Assertions in constructor will call comparison functor:
+	compared_normally = 0;
+	compared_transparently = 0;
+#endif // !NDEBUG
 
 	ASSERT_EQ(0u, compared_normally);
 	ASSERT_EQ(0u, compared_transparently);

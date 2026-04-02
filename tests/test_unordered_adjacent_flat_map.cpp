@@ -514,7 +514,11 @@ TEST(sh_unordered_adjacent_flat_map, operator_assign)
 		ASSERT_EQ(x.size(), 1u);
 		ASSERT_TRUE(x.contains(1));
 
+		// Self copy:
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
 		x = x;
+#pragma clang diagnostic pop
 		EXPECT_FALSE(x.empty());
 		EXPECT_EQ(x.size(), 1u);
 		EXPECT_TRUE(x.contains(1));
@@ -535,7 +539,11 @@ TEST(sh_unordered_adjacent_flat_map, operator_assign_move)
 	EXPECT_EQ(y.size(), 1u);
 	EXPECT_EQ(y.at(1), "one");
 
+	// Self move:
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wself-move"
 	y = std::move(y);
+#pragma GCC diagnostic pop
 }
 TEST(sh_unordered_adjacent_flat_map, key_eq)
 {
