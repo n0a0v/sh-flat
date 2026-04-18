@@ -64,17 +64,13 @@ public:
 	using const_reference = std::pair<const key_type&, const mapped_type&>;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = flat::iterator_pair<
-		decltype(std::begin(std::declval<const key_container_type&>())),
-		decltype(std::begin(std::declval<mapped_container_type&>()))>;
-	using const_iterator = flat::iterator_pair<
-		decltype(std::begin(std::declval<const key_container_type&>())),
-		decltype(std::begin(std::declval<const mapped_container_type&>()))>;
+	using iterator = flat::iterator_pair<flat::const_iterator_t<key_container_type>, flat::iterator_t<mapped_container_type>>;
+	using const_iterator = flat::iterator_pair<flat::const_iterator_t<key_container_type>, flat::const_iterator_t<mapped_container_type>>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	static_assert(std::is_same_v<Key, typename key_container_type::value_type>);
-	static_assert(std::is_same_v<T, typename mapped_container_type::value_type>);
+	static_assert(std::is_same_v<Key, typename std::iterator_traits<flat::iterator_t<key_container_type>>::value_type>);
+	static_assert(std::is_same_v<T, typename std::iterator_traits<flat::iterator_t<mapped_container_type>>::value_type>);
 	static_assert(std::is_nothrow_swappable_v<key_container_type>);
 	static_assert(std::is_nothrow_swappable_v<mapped_container_type>);
 
@@ -798,7 +794,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::at(const K& key_a
 {
 	using std::get;
 	using std::end;
-	const auto iter = this->find(key_arg);
+	const iterator iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "flat_map::at" };
@@ -812,7 +808,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::at(const K& key_a
 {
 	using std::get;
 	using std::end;
-	const auto iter = this->find(key_arg);
+	const const_iterator iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "flat_map::at" };
@@ -1038,10 +1034,10 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const Inpu
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	// [first_iter, middle_iter) were sorted prior to calling do_insert_back_without_sorting.
-	const auto first_iter = flat::iterator_pair{ begin(m_keys), begin(m_values) };
-	const auto middle_iter = next(first_iter, pre_insert_size);
+	const flat::iterator_pair first_iter{ begin(m_keys), begin(m_values) };
+	const flat::iterator_pair middle_iter{ next(first_iter, pre_insert_size) };
 	// [middle_iter, last_iter) are the unsorted elements appended by do_insert_back_without_sorting.
-	const auto last_iter = flat::iterator_pair{ end(m_keys), end(m_values) };
+	const flat::iterator_pair last_iter{ end(m_keys), end(m_values) };
 	// [middle_iter, last_iter) must be sorted (not stable!).
 	const value_compare comp = this->value_comp();
 	sort(middle_iter, last_iter, comp);
@@ -1067,11 +1063,11 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::insert(const sort
 		using std::next;
 		using std::inplace_merge;
 		// [first, middle) were sorted prior to calling do_insert_back_without_sorting.
-		const auto first_iter = flat::iterator_pair{ begin(m_keys), begin(m_values) };
-		const auto middle_iter = next(first_iter, pre_insert_size);
+		const flat::iterator_pair first_iter{ begin(m_keys), begin(m_values) };
+		const flat::iterator_pair middle_iter{ next(first_iter, pre_insert_size) };
 		// [middle, last) are the unsorted elements appended by do_insert_back_without_sorting.
 		// [middle, last) is already sorted, per the sorted_unique_t tag.
-		const auto last_iter = flat::iterator_pair{ end(m_keys), end(m_values) };
+		const flat::iterator_pair last_iter{ end(m_keys), end(m_values) };
 		// Merge the two sorted ranges together (stable sort).
 		const value_compare comp = this->value_comp();
 		inplace_merge(first_iter, middle_iter, last_iter, comp);
@@ -1168,14 +1164,28 @@ template <typename... Args, typename IsConstructible>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	using std::get;
+	// If possible, keep emplace a transparent operation.
 	if constexpr (sizeof...(args) == 2)
 	{
-		// If possible, keep emplace a transparent operation.
 		return this->do_transparent_emplace_if_unique(std::forward<Args>(args)...);
 	}
 	else
 	{
+		using std::get;
+		if constexpr (sizeof...(args) == 1)
+		{
+			if constexpr (std::is_convertible_v<Args&&..., value_type&&>)
+			{
+				return this->do_transparent_emplace_if_unique(std::move(get<0>(args...)), std::move(get<1>(args...)));
+			}
+			else if constexpr (std::is_convertible_v<Args&&..., const value_type&>)
+			{
+				// Collapse reference_wrapper (or similar) into value_type&.
+				const value_type& value{ args... };
+				return this->do_transparent_emplace_if_unique(get<0>(value), get<1>(value));
+			}
+		}
+		// Handle any other possible value_type construction (e.g., piecewise_construct):
 		value_type value(std::forward<Args>(args)...);
 		return this->do_transparent_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
@@ -1350,7 +1360,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::find(const K& key
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<key_container_type> key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1364,7 +1374,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::find(const K& key
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<const key_container_type> key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return const_iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1395,7 +1405,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::lower_bound(const
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_lower_bound(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<key_container_type> key_iter = this->do_lower_bound(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1409,7 +1419,7 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::lower_bound(const
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_lower_bound(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<const key_container_type> key_iter = this->do_lower_bound(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return const_iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1424,8 +1434,8 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::upper_bound(const
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto& less = this->get_less();
-	const auto key_iter = upper_bound(begin(m_keys), end(m_keys), key_arg, less);
+	const key_compare& less = this->get_less();
+	const flat::iterator_t<key_container_type> key_iter = upper_bound(begin(m_keys), end(m_keys), key_arg, less);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1440,8 +1450,8 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::upper_bound(const
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto& less = this->get_less();
-	const auto key_iter = upper_bound(begin(m_keys), end(m_keys), key_arg, less);
+	const key_compare& less = this->get_less();
+	const flat::iterator_t<const key_container_type> key_iter = upper_bound(begin(m_keys), end(m_keys), key_arg, less);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return const_iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1514,7 +1524,7 @@ template <typename KeyIterator>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_find(const key_type& key_arg, const KeyIterator first, const KeyIterator last) const
 	-> KeyIterator
 {
-	const auto key_iter = this->do_lower_bound(key_arg, first, last);
+	const KeyIterator key_iter = this->do_lower_bound(key_arg, first, last);
 	return key_iter == last || this->get_less()(key_arg, *key_iter) ? last : key_iter;
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -1522,7 +1532,7 @@ template <typename K, typename KeyIterator, typename C, typename IsTransparent>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_find(const K& key_arg, const KeyIterator first, const KeyIterator last) const
 	-> KeyIterator
 {
-	const auto key_iter = this->do_lower_bound(key_arg, first, last);
+	const KeyIterator key_iter = this->do_lower_bound(key_arg, first, last);
 	return key_iter == last || this->get_less()(key_arg, *key_iter) ? last : key_iter;
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -1552,8 +1562,8 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_em
 	if (get<0>(iter) == end(m_keys) || this->get_less()(key_arg, get<0>(*iter)))
 	{
 		// Desynchronization occurs if m_keys emplaces but m_values throws.
-		const auto key_iter = m_keys.emplace(get<0>(iter), std::forward<K>(key_arg));
-		const auto value_iter = m_values.emplace(get<1>(iter), std::forward<Args>(args)...);
+		const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(get<0>(iter), std::forward<K>(key_arg));
+		const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(get<1>(iter), std::forward<Args>(args)...);
 		return { iterator{ key_iter, value_iter }, true };
 	}
 	return { iter, false };
@@ -1569,25 +1579,25 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_em
 	using std::prev;
 	if (m_keys.empty() == false)
 	{
-		const auto key_hint = get<0>(hint);
-		const auto& less = this->get_less();
+		const flat::iterator_t<const key_container_type> key_hint = get<0>(hint);
+		const key_compare& less = this->get_less();
 		if (key_hint == end(m_keys) && less(m_keys.back(), key_arg))
 		{
 			// Hint is at the end and the back is less than the given key.
-			const auto value_hint = get<1>(hint);
+			const flat::iterator_t<const mapped_container_type> value_hint = get<1>(hint);
 			// Desynchronization occurs if m_keys emplaces but m_values throws.
-			const auto key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
-			const auto value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
+			const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
 			return iterator{ key_iter, value_iter };
 		}
 		else if ((key_hint == begin(m_keys) || less(*prev(key_hint), key_arg))
 			&& less(key_arg, *key_hint))
 		{
 			// Hint is at the end and the back is less than the given key.
-			const auto value_hint = get<1>(hint);
+			const flat::iterator_t<const mapped_container_type> value_hint = get<1>(hint);
 			// Desynchronization occurs if m_keys emplaces but m_values throws.
-			const auto key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
-			const auto value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
+			const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
 			return iterator{ key_iter, value_iter };
 		}
 	}
@@ -1633,8 +1643,8 @@ void flat_map<Key, T, Compare, KeyContainer, MappedContainer>::sort_containers_a
 	using std::sort;
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
-	auto first = flat::iterator_pair{ begin(m_keys), begin(m_values) };
-	auto last = flat::iterator_pair{ end(m_keys), end(m_values) };
+	flat::iterator_pair first{ begin(m_keys), begin(m_values) };
+	flat::iterator_pair last{ end(m_keys), end(m_values) };
 	const value_compare comp = this->value_comp();
 	sort(first, last, comp);
 	this->erase_sorted_duplicates(first, last, comp);

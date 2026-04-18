@@ -890,6 +890,8 @@ TEST(sh_unordered_adjacent_flat_map, emplace)
 {
 	using std::get;
 	unordered_adjacent_flat_map<int, std::string> x;
+
+	// Test non-overwrite:
 	{
 		const auto it = x.emplace(1, "one");
 		EXPECT_TRUE(it.second);
@@ -897,12 +899,47 @@ TEST(sh_unordered_adjacent_flat_map, emplace)
 		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
-		const auto it = x.emplace(1, "one!");
+		const auto it = x.emplace(1, "two");
 		EXPECT_FALSE(it.second);
 		EXPECT_EQ(get<0>(*it.first), 1);
 		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	ASSERT_EQ(x.size(), 1u);
+
+	// Test empty args:
+	{
+		const auto it = x.emplace();
+		EXPECT_TRUE(it.second);
+		EXPECT_EQ(get<0>(*it.first), int{});
+		EXPECT_EQ(get<1>(*it.first), std::string{});
+	}
+	// Test std::pair l-value fast path:
+	{
+		const std::pair<int, std::string> v{ 2, "two" };
+		const auto it = x.emplace(v);
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test std::pair r-value fast path:
+	{
+		const std::pair<int, std::string> v{ 3, "three" };
+		const auto it = x.emplace(std::pair<int, std::string>{ v });
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test reference_wrapped fast path:
+	{
+		const std::pair<int, std::string> v{ 4, "four" };
+		const auto it = x.emplace(std::ref(v));
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test piecewise_construct
+	{
+		const auto it = x.emplace(std::piecewise_construct, std::tuple{ 5 }, std::tuple{ 5, '5' });
+		EXPECT_EQ(get<0>(*it.first), 5);
+		EXPECT_EQ(get<1>(*it.first), "55555");
+	}
 }
 TEST(sh_unordered_adjacent_flat_map, emplace_transparent)
 {

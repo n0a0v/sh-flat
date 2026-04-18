@@ -34,6 +34,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <iterator>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -63,6 +64,44 @@ namespace sh
 
 namespace sh::flat
 {
+	/**	ADL-friendly begin function intended for type lookup.
+	 *	@tparam T The container or range type of which to return the beginning iterator.
+	 *	@param container The container or range of which to return the beginning iterator.
+	 *	@return The beginning iterator of the given container or range.
+	 */
+	template <typename T>
+	constexpr auto adl_begin(T& container)
+	{
+		using std::begin;
+		return begin(container);
+	}
+
+	/**	ADL-friendly cbegin function intended for type lookup.
+	 *	@tparam T The container or range type of which to return the beginning constant iterator.
+	 *	@param container The container or range of which to return the beginning constant iterator.
+	 *	@return The beginning constant iterator of the given container or range.
+	 */
+	template <typename T>
+	constexpr auto adl_cbegin(const T& container)
+	{
+		using std::cbegin;
+		return cbegin(container);
+	}
+
+	/**	The iterator type of a given container or range type.
+	 *	@detail Counterpart to C++20 std::ranges::iterator_t.
+	 *	@tparam T The container or range type of which to alias the iterator type.
+	 */
+	template <typename T>
+	using iterator_t = decltype(adl_begin(std::declval<T&>()));
+
+	/**	The iterator type of a given constant container or range type.
+	 *	@detail Counterpart to C++20 std::ranges::const_iterator_t.
+	 *	@tparam T The constant container or range type of which to alias the iterator type.
+	 */
+	template <typename T>
+	using const_iterator_t = decltype(adl_cbegin(std::declval<const T&>()));
+
 	/**	Check if a given type has a reserve function like std::vector's.
 	 *	@tparam T The type to check for a callable T::reserve(size_type) member function.
 	 */
@@ -528,7 +567,7 @@ namespace sh::flat
 		iterator_type m_iterator;
 	};
 
-} // sh::flat
+} // namespace sh::flat
 
 namespace std
 {

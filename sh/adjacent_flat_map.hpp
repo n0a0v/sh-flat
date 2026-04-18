@@ -56,23 +56,23 @@ public:
 	using container_type = Container;
 	using key_type = Key;
 	using mapped_type = T;
-	using value_type = typename container_type::value_type;
+	using value_type = typename std::iterator_traits<flat::iterator_t<container_type>>::value_type;
 	using key_compare = Compare;
 	using reference = value_type&;
 	using const_reference = const value_type&;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = flat::iterator_wrapper<typename container_type::iterator,
+	using iterator = flat::iterator_wrapper<flat::iterator_t<container_type>,
 		std::pair<key_type, mapped_type>,
 		std::pair<const key_type&, mapped_type&>>;
-	using const_iterator = flat::iterator_wrapper<typename container_type::const_iterator,
-		const std::pair<key_type, mapped_type>,
+	using const_iterator = flat::iterator_wrapper<flat::const_iterator_t<container_type>,
+		std::pair<key_type, mapped_type>,
 		std::pair<const key_type&, const mapped_type&>>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	static_assert(std::is_same_v<Key, std::tuple_element_t<0, typename container_type::value_type>>);
-	static_assert(std::is_same_v<T, std::tuple_element_t<1, typename container_type::value_type>>);
+	static_assert(std::is_same_v<Key, std::tuple_element_t<0, value_type>>);
+	static_assert(std::is_same_v<T, std::tuple_element_t<1, value_type>>);
 	static_assert(std::is_nothrow_swappable_v<container_type>);
 
 	struct value_compare : private key_compare
@@ -743,7 +743,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::at(const K& key_arg)
 	using std::begin;
 	using std::get;
 	using std::end;
-	const auto iter = this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs));
+	const flat::iterator_t<container_type> iter = this->do_find(key_arg, begin(m_key_value_pairs), end(m_key_value_pairs));
 	if (iter == end(m_key_value_pairs))
 	{
 		throw std::out_of_range{ "adjacent_flat_map::at" };
@@ -757,7 +757,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::at(const K& key_arg) const
 {
 	using std::get;
 	using std::end;
-	const auto iter = this->find(key_arg);
+	const iterator iter = this->find(key_arg);
 	if (iter == end(m_key_value_pairs))
 	{
 		throw std::out_of_range{ "adjacent_flat_map::at" };
@@ -982,10 +982,10 @@ void adjacent_flat_map<Key, T, Compare, Container>::insert(const InputIterator f
 	const size_type pre_insert_size{ m_key_value_pairs.size() };
 	this->do_insert_back_without_sorting(first, last);
 	// [first_iter, middle_iter) were sorted prior to calling do_insert_back_without_sorting.
-	const auto first_iter = begin(m_key_value_pairs);
-	const auto middle_iter = next(first_iter, pre_insert_size);
+	const flat::iterator_t<container_type> first_iter = begin(m_key_value_pairs);
+	const flat::iterator_t<container_type> middle_iter = next(first_iter, pre_insert_size);
 	// [middle_iter, last_iter) are the unsorted elements appended by do_insert_back_without_sorting.
-	const auto last_iter = end(m_key_value_pairs);
+	const flat::iterator_t<container_type> last_iter = end(m_key_value_pairs);
 	// [middle_iter, last_iter) must be sorted (not stable!).
 	const value_compare comp = this->value_comp();
 	sort(middle_iter, last_iter, comp);
@@ -1009,11 +1009,11 @@ void adjacent_flat_map<Key, T, Compare, Container>::insert(const sorted_unique_t
 		using std::next;
 		using std::inplace_merge;
 		// [first, middle) were sorted prior to calling do_insert_back_without_sorting.
-		const auto first_iter = begin(m_key_value_pairs);
-		const auto middle_iter = next(first_iter, pre_insert_size);
+		const flat::iterator_t<container_type> first_iter = begin(m_key_value_pairs);
+		const flat::iterator_t<container_type> middle_iter = next(first_iter, pre_insert_size);
 		// [middle, last) are the unsorted elements appended by do_insert_back_without_sorting.
 		// [middle, last) is already sorted, per the sorted_unique_t tag.
-		const auto last_iter = end(m_key_value_pairs);
+		const flat::iterator_t<container_type> last_iter = end(m_key_value_pairs);
 		// Merge the two sorted ranges together (stable sort).
 		const value_compare comp = this->value_comp();
 		inplace_merge(first_iter, middle_iter, last_iter, comp);
@@ -1334,7 +1334,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::upper_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	const auto& less = this->get_less();
+	const key_compare& less = this->get_less();
 	return iterator{ upper_bound(begin(m_key_value_pairs), end(m_key_value_pairs), key_arg, less) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1346,7 +1346,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::upper_bound(const K& key_arg
 	using std::begin;
 	using std::end;
 	using std::next;
-	const auto& less = this->get_less();
+	const key_compare& less = this->get_less();
 	return const_iterator{ upper_bound(begin(m_key_value_pairs), end(m_key_value_pairs), key_arg, less) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1410,7 +1410,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_find(const key_type& key_
 	-> Iterator
 {
 	using std::get;
-	const auto key_iter = this->do_lower_bound(key_arg, first, last);
+	const Iterator key_iter = this->do_lower_bound(key_arg, first, last);
 	return key_iter == last || this->get_less()(key_arg, get<0>(*key_iter)) ? last : key_iter;
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1419,7 +1419,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_find(const K& key_arg, co
 	-> Iterator
 {
 	using std::get;
-	const auto key_iter = this->do_lower_bound(key_arg, first, last);
+	const Iterator key_iter = this->do_lower_bound(key_arg, first, last);
 	return key_iter == last || this->get_less()(key_arg, get<0>(*key_iter)) ? last : key_iter;
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1473,7 +1473,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_if_un
 {
 	using std::end;
 	using std::get;
-	auto iter = this->lower_bound(key_arg);
+	iterator iter = this->lower_bound(key_arg);
 	const bool emplaced = iter.get() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter));
 	if (emplaced)
 	{
@@ -1492,7 +1492,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_hint_
 	using std::prev;
 	if (m_key_value_pairs.empty() == false)
 	{
-		const auto& less = this->get_less();
+		const key_compare& less = this->get_less();
 		if (hint.get() == end(m_key_value_pairs) && less(get<0>(m_key_value_pairs.back()), key_arg))
 		{
 			// Hint is at the end and the back is less than the given key.
@@ -1512,7 +1512,8 @@ template <typename Key, typename T, typename Compare, typename Container>
 template <typename InputIterator>
 void adjacent_flat_map<Key, T, Compare, Container>::do_insert_back_without_sorting(const InputIterator first, const InputIterator last)
 {
-	m_key_value_pairs.insert(m_key_value_pairs.end(), first, last);
+	using std::end;
+	m_key_value_pairs.insert(end(m_key_value_pairs), first, last);
 }
 template <typename Key, typename T, typename Compare, typename Container>
 template <typename Iterator>
@@ -1527,8 +1528,8 @@ void adjacent_flat_map<Key, T, Compare, Container>::sort_containers_and_erase_du
 	using std::begin;
 	using std::end;
 	using std::sort;
-	auto first = begin(m_key_value_pairs);
-	auto last = end(m_key_value_pairs);
+	flat::iterator_t<container_type> first = begin(m_key_value_pairs);
+	flat::iterator_t<container_type> last = end(m_key_value_pairs);
 	const value_compare comp = this->value_comp();
 	sort(first, last, comp);
 	this->erase_sorted_duplicates(first, last, comp);

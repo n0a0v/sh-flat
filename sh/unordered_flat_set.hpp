@@ -60,10 +60,12 @@ public:
 	using const_reference = const value_type&;
 	using size_type = typename KeyContainer::size_type;
 	using difference_type = typename KeyContainer::difference_type;
-	using iterator = decltype(std::begin(std::declval<const container_type&>()));
+	using iterator = flat::const_iterator_t<container_type>;
 	using const_iterator = iterator;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+	static_assert(std::is_same_v<Key, typename std::iterator_traits<flat::iterator_t<container_type>>::value_type>);
 
 	// Member functions:
 	unordered_flat_set();
@@ -686,6 +688,7 @@ template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename InputIterator>
 void unordered_flat_set<Key, KeyEqual, KeyContainer>::insert(const unsorted_unique_t, InputIterator first, const InputIterator last)
 {
+	using std::begin;
 	using std::next;
 	// Deduplicate the (fairly) slow way, by checking each element against the
 	// preexisting elements but not newly inserted elements, as they're tagged
@@ -704,8 +707,8 @@ void unordered_flat_set<Key, KeyEqual, KeyContainer>::insert(const unsorted_uniq
 	const size_type pre_insert_size{ m_keys.size() };
 	while (first != last)
 	{
-		const auto last = next(m_keys.begin(), pre_insert_size);
-		if (do_find(*first, m_keys.begin(), last) == last)
+		const flat::iterator_t<container_type> last = next(begin(m_keys), pre_insert_size);
+		if (do_find(*first, begin(m_keys), last) == last)
 		{
 			m_keys.emplace_back(*first);
 		}
@@ -740,12 +743,13 @@ auto unordered_flat_set<Key, KeyEqual, KeyContainer>::erase(const const_iterator
 	-> iterator
 {
 	{
+		using std::begin;
 		using std::cbegin;
 		using std::distance;
 		using std::end;
 		using std::next;
 		const difference_type pos_index{ distance(cbegin(m_keys), pos) };
-		const typename container_type::iterator pos_iter = next(m_keys.begin(), pos_index);
+		const flat::iterator_t<container_type> pos_iter = next(begin(m_keys), pos_index);
 		if (next(pos_iter) != end(m_keys))
 		{
 			*pos_iter = std::move(m_keys.back());
@@ -821,8 +825,8 @@ auto unordered_flat_set<Key, KeyEqual, KeyContainer>::erase(const K& key_arg)
 	using std::begin;
 	using std::end;
 	using std::next;
-	const auto end_iter = end(m_keys);
-	const auto iter = this->do_find(key_arg, begin(m_keys), end_iter);
+	const flat::iterator_t<container_type> end_iter = end(m_keys);
+	const flat::iterator_t<container_type> iter = this->do_find(key_arg, begin(m_keys), end_iter);
 	if (iter == end_iter)
 	{
 		return 0;
@@ -925,45 +929,53 @@ template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::find(const K& key_arg)
 	 -> iterator
 {
-	return this->do_find(key_arg, m_keys.begin(), m_keys.end());
+	using std::begin;
+	using std::end;
+	return this->do_find(key_arg, begin(m_keys), end(m_keys));
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::find(const K& key_arg) const
 	-> const_iterator
 {
-	return this->do_find(key_arg, m_keys.begin(), m_keys.end());
+	using std::begin;
+	using std::end;
+	return this->do_find(key_arg, begin(m_keys), end(m_keys));
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::count(const K& key_arg) const
 	-> size_type
 {
-	return this->find(key_arg) != m_keys.end() ? 1 : 0;
+	using std::end;
+	return this->find(key_arg) != end(m_keys) ? 1 : 0;
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename K, typename C, typename IsTransparent>
 bool unordered_flat_set<Key, KeyEqual, KeyContainer>::contains(const K& key_arg) const
 {
-	return this->find(key_arg) != m_keys.end();
+	using std::end;
+	return this->find(key_arg) != end(m_keys);
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::equal_range(const K& key_arg)
 	-> std::pair<iterator, iterator>
 {
+	using std::end;
 	using std::next;
 	const iterator iter = this->find(key_arg);
-	return { iter, iter == m_keys.end() ? iter : next(iter) };
+	return { iter, iter == end(m_keys) ? iter : next(iter) };
 }
 template <typename Key, typename KeyEqual, typename KeyContainer>
 template <typename K, typename C, typename IsTransparent>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::equal_range(const K& key_arg) const
 	-> std::pair<const_iterator, const_iterator>
 {
+	using std::end;
 	using std::next;
 	const const_iterator iter = this->find(key_arg);
-	return { iter, iter == m_keys.end() ? iter : next(iter) };
+	return { iter, iter == end(m_keys) ? iter : next(iter) };
 }
 
 // Observers:
@@ -996,7 +1008,7 @@ bool operator==(const unordered_flat_set<Key, KeyEqual, KeyContainer>& lhs, cons
 	{
 		return false;
 	}
-	for (const auto& key : lhs)
+	for (typename unordered_flat_set<Key, KeyEqual, KeyContainer>::const_reference key : lhs)
 	{
 		if (rhs.contains(key) == false)
 		{
@@ -1025,7 +1037,7 @@ auto unordered_flat_set<Key, KeyEqual, KeyContainer>::do_find(const K& key_arg, 
 	-> Iterator
 {
 	using std::find_if;
-	auto& equal = this->get_equal();
+	const key_equal& equal = this->get_equal();
 	return find_if(first, last,
 		[&key_arg, &equal](const key_type& key)
 	{
@@ -1037,13 +1049,14 @@ template <typename K>
 auto unordered_flat_set<Key, KeyEqual, KeyContainer>::do_transparent_emplace_back_if_unique(K&& key_arg)
 	-> std::pair<iterator, bool>
 {
+	using std::end;
 	using std::prev;
 	iterator iter = this->find(key_arg);
-	const bool inserted = iter == m_keys.end();
+	const bool inserted = iter == end(m_keys);
 	if (inserted)
 	{
 		m_keys.emplace_back(std::forward<K>(key_arg));
-		iter = prev(m_keys.end());
+		iter = prev(end(m_keys));
 	}
 	return { iter, inserted };
 }

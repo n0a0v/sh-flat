@@ -64,17 +64,13 @@ public:
 	using const_reference = std::pair<const key_type&, const mapped_type&>;
 	using size_type = std::size_t;
 	using difference_type = std::ptrdiff_t;
-	using iterator = flat::iterator_pair<
-		decltype(std::begin(std::declval<const key_container_type&>())),
-		decltype(std::begin(std::declval<mapped_container_type&>()))>;
-	using const_iterator = flat::iterator_pair<
-		decltype(std::begin(std::declval<const key_container_type&>())),
-		decltype(std::begin(std::declval<const mapped_container_type&>()))>;
+	using iterator = flat::iterator_pair<flat::const_iterator_t<key_container_type>, flat::iterator_t<mapped_container_type>>;
+	using const_iterator = flat::iterator_pair<flat::const_iterator_t<key_container_type>, flat::const_iterator_t<mapped_container_type>>;
 	using reverse_iterator = std::reverse_iterator<iterator>;
 	using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-	static_assert(std::is_same_v<Key, typename key_container_type::value_type>);
-	static_assert(std::is_same_v<T, typename mapped_container_type::value_type>);
+	static_assert(std::is_same_v<Key, typename std::iterator_traits<flat::iterator_t<key_container_type>>::value_type>);
+	static_assert(std::is_same_v<T, typename std::iterator_traits<flat::iterator_t<mapped_container_type>>::value_type>);
 	static_assert(std::is_nothrow_swappable_v<key_container_type>);
 	static_assert(std::is_nothrow_swappable_v<mapped_container_type>);
 
@@ -472,8 +468,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = flat::iterator_pair{ begin(key_cont), begin(mapped_cont) };
-	const auto last = flat::iterator_pair{ end(key_cont), end(mapped_cont) };
+	const flat::iterator_pair first{ begin(key_cont), begin(mapped_cont) };
+	const flat::iterator_pair last{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	this->insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -488,8 +484,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = flat::iterator_pair{ begin(key_cont), begin(mapped_cont) };
-	const auto last = flat::iterator_pair{ end(key_cont), end(mapped_cont) };
+	const flat::iterator_pair first{ begin(key_cont), begin(mapped_cont) };
+	const flat::iterator_pair last{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	this->insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -504,8 +500,8 @@ unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::unordered_f
 {
 	using std::begin;
 	using std::end;
-	const auto first = flat::iterator_pair{ begin(key_cont), begin(mapped_cont) };
-	const auto last = flat::iterator_pair{ end(key_cont), end(mapped_cont) };
+	const flat::iterator_pair first{ begin(key_cont), begin(mapped_cont) };
+	const flat::iterator_pair last{ end(key_cont), end(mapped_cont) };
 	// Use insert rather than copying as it will de-duplicate (the slow way).
 	this->insert(first, last);
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
@@ -748,7 +744,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::at(con
 {
 	using std::get;
 	using std::end;
-	const auto iter = this->find(key_arg);
+	const iterator iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "unordered_flat_map::at" };
@@ -762,7 +758,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::at(con
 {
 	using std::get;
 	using std::end;
-	const auto iter = this->find(key_arg);
+	const iterator iter = this->find(key_arg);
 	if (get<0>(iter) == end(m_keys))
 	{
 		throw std::out_of_range{ "unordered_flat_map::at" };
@@ -1008,7 +1004,7 @@ void unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::insert
 	const size_type pre_insert_size{ m_keys.size() };
 	while (first != last)
 	{
-		const auto keys_last = next(begin(m_keys), pre_insert_size);
+		const flat::iterator_t<key_container_type> keys_last = next(begin(m_keys), pre_insert_size);
 		if (this->do_find(get<0>(*first), begin(m_keys), keys_last) == keys_last)
 		{
 			// Desynchronization occurs if m_keys emplaces but m_values throws.
@@ -1059,16 +1055,17 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(
 	-> iterator
 {
 	{
+		using std::begin;
 		using std::cbegin;
 		using std::distance;
 		using std::end;
 		using std::get;
 		using std::next;
 		const difference_type pos_index{ distance(cbegin(m_keys), get<0>(pos)) };
-		const typename key_container_type::iterator key_iter = next(m_keys.begin(), pos_index);
+		const flat::iterator_t<key_container_type> key_iter = next(begin(m_keys), pos_index);
 		if (next(key_iter) != end(m_keys))
 		{
-			const typename mapped_container_type::iterator value_iter = next(m_values.begin(), pos_index);
+			const flat::iterator_t<mapped_container_type> value_iter = next(begin(m_values), pos_index);
 			// Desynchronization occurs if exception thrown before m_values pops.
 			*key_iter = std::move(m_keys.back());
 			*value_iter = std::move(m_values.back());
@@ -1120,14 +1117,28 @@ template <typename... Args, typename IsConstructible>
 auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	using std::get;
+	// If possible, keep emplace a transparent operation.
 	if constexpr (sizeof...(args) == 2)
 	{
-		// If possible, keep emplace a transparent operation.
 		return this->do_transparent_emplace_back_if_unique(std::forward<Args>(args)...);
 	}
 	else
 	{
+		using std::get;
+		if constexpr (sizeof...(args) == 1)
+		{
+			if constexpr (std::is_convertible_v<Args&&..., value_type&&>)
+			{
+				return this->do_transparent_emplace_back_if_unique(std::move(get<0>(args...)), std::move(get<1>(args...)));
+			}
+			else if constexpr (std::is_convertible_v<Args&&..., const value_type&>)
+			{
+				// Collapse reference_wrapper (or similar) into value_type&.
+				const value_type& value{ args... };
+				return this->do_transparent_emplace_back_if_unique(get<0>(value), get<1>(value));
+			}
+		}
+		// Handle any other possible value_type construction (e.g., piecewise_construct):
 		value_type value(std::forward<Args>(args)...);
 		return this->do_transparent_emplace_back_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
@@ -1182,9 +1193,9 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(
 	using std::begin;
 	using std::end;
 	using std::next;
-	const auto key_begin = begin(m_keys);
-	const auto key_end = end(m_keys);
-	const auto key_iter = this->do_find(key_arg, key_begin, key_end);
+	const flat::iterator_t<key_container_type> key_begin = begin(m_keys);
+	const flat::iterator_t<key_container_type> key_end = end(m_keys);
+	const flat::iterator_t<key_container_type> key_iter = this->do_find(key_arg, key_begin, key_end);
 	if (key_iter == key_end)
 	{
 		return 0;
@@ -1192,7 +1203,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::erase(
 	if (next(key_iter) != key_end)
 	{
 		using std::distance;
-		const auto value_iter = next(begin(m_values), distance(key_begin, key_iter));
+		const flat::iterator_t<mapped_container_type> value_iter = next(begin(m_values), distance(key_begin, key_iter));
 		// Desynchronization occurs if anything throws before m_values pops.
 		*key_iter = std::move(m_keys.back());
 		*value_iter = std::move(m_values.back());
@@ -1276,7 +1287,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::find(c
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<key_container_type> key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1290,7 +1301,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::find(c
 	using std::end;
 	using std::next;
 	using std::distance;
-	const auto key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
+	const flat::iterator_t<const key_container_type> key_iter = this->do_find(key_arg, begin(m_keys), end(m_keys));
 	SH_FLAT_ASSERT(m_keys.size() == m_values.size(),
 		"Key & value containers expected to be the same size.");
 	return const_iterator{ key_iter, next(begin(m_values), distance(begin(m_keys), key_iter)) };
@@ -1365,6 +1376,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::values
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 bool operator==(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& lhs, const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& rhs)
 {
+	using std::end;
 	using std::get;
 	if (lhs.size() != rhs.size())
 	{
@@ -1372,8 +1384,8 @@ bool operator==(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedC
 	}
 	for (const auto& [key, value] : lhs)
 	{
-		const auto it = rhs.find(key);
-		if (it == rhs.end() || (value == get<1>(*it)) == false)
+		const flat::iterator_t<const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>> iter = rhs.find(key);
+		if (iter == end(rhs) || (value == get<1>(*iter)) == false)
 		{
 			return false;
 		}
@@ -1383,6 +1395,7 @@ bool operator==(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedC
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>
 bool operator!=(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& lhs, const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>& rhs)
 {
+	using std::end;
 	using std::get;
 	if (lhs.size() != rhs.size())
 	{
@@ -1390,8 +1403,8 @@ bool operator!=(const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedC
 	}
 	for (const auto& [key, value] : lhs)
 	{
-		const auto it = rhs.find(key);
-		if (it == rhs.end() || value != get<1>(*it))
+		const flat::iterator_t<const unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>> iter = rhs.find(key);
+		if (iter == end(rhs) || value != get<1>(*iter))
 		{
 			return true;
 		}
@@ -1413,7 +1426,7 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_fin
 	-> KeyIterator
 {
 	using std::find_if;
-	auto& equal = this->get_equal();
+	const key_equal& equal = this->get_equal();
 	return find_if(first, last,
 		[&key_arg, &equal](const key_type& key)
 	{
