@@ -130,6 +130,23 @@ namespace sh::flat
 	 */
 	template <typename T> constexpr bool has_is_transparent_v = has_is_transparent<T>::value;
 
+	/**	Check if one given type has a conversion operator member function to another type.
+	 *	@tparam From The type from which to convert.
+	 *	@tparam To The type to which to convert.
+	 */
+	template <typename From, typename To, typename = void> struct has_conversion_operator : std::false_type {};
+	template <typename From, typename To>
+	struct has_conversion_operator<From, To,
+		std::void_t<decltype(std::declval<From>().operator To())>
+	> : std::true_type
+	{ };
+	/**	True if one given type has a conversion operator member function to another type. False otherwise.
+	 *	@tparam From The type from which to convert.
+	 *	@tparam To The type to which to convert.
+	 */
+	template <typename From, typename To>
+	constexpr bool has_conversion_operator_v = has_conversion_operator<From, To>::value;
+
 	/**	Like std::adjacent_find but accepts a less-than predicate in the place of an is-equal predicate and expects the range to be sorted.
 	 *	@param first The first iterator in a sorted range [first, last).
 	 *	@param last The last iterator in a sorted range [first, last).

@@ -76,7 +76,7 @@ public:
 	unordered_flat_set(
 		const unordered_flat_set& other,
 		const Allocator& alloc);
-	unordered_flat_set(unordered_flat_set&& other);
+	unordered_flat_set(unordered_flat_set&& other) noexcept;
 	template <typename Allocator,
 		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
@@ -354,7 +354,7 @@ unordered_flat_set<Key, KeyEqual, KeyContainer>::unordered_flat_set(const unorde
 	, m_keys{ other.m_keys, alloc }
 { }
 template <typename Key, typename KeyEqual, typename KeyContainer>
-unordered_flat_set<Key, KeyEqual, KeyContainer>::unordered_flat_set(unordered_flat_set&& other)
+unordered_flat_set<Key, KeyEqual, KeyContainer>::unordered_flat_set(unordered_flat_set&& other) noexcept
 	: key_equal{ std::move(other.get_equal()) }
 	, m_keys{ std::move(other.m_keys) }
 { }

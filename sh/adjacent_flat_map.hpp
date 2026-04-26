@@ -96,7 +96,7 @@ public:
 	adjacent_flat_map(
 		const adjacent_flat_map& other,
 		const Allocator& alloc);
-	adjacent_flat_map(adjacent_flat_map&& other);
+	adjacent_flat_map(adjacent_flat_map&& other) noexcept;
 	template <typename Allocator,
 		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
@@ -401,6 +401,10 @@ private:
 	Iterator do_lower_bound(const key_type& key_arg, const Iterator first, const Iterator last) const;
 	template <typename K, typename Iterator, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	Iterator do_lower_bound(const K& key_arg, const Iterator first, const Iterator last) const;
+	template <typename... Args>
+	std::pair<iterator, bool> do_emplace_if_unique(const key_type& key_arg, Args&&... args);
+	template <typename... Args>
+	std::pair<iterator, bool> do_emplace_if_unique(key_type&& key_arg, Args&&... args);
 	template <typename K, typename... Args>
 	std::pair<iterator, bool> do_transparent_emplace_if_unique(K&& key_arg, Args&&... args);
 	template <typename K, typename... Args>
@@ -434,7 +438,7 @@ adjacent_flat_map<Key, T, Compare, Container>::adjacent_flat_map(const adjacent_
 	, m_key_value_pairs{ other.m_key_value_pairs, alloc }
 { }
 template <typename Key, typename T, typename Compare, typename Container>
-adjacent_flat_map<Key, T, Compare, Container>::adjacent_flat_map(adjacent_flat_map&& other)
+adjacent_flat_map<Key, T, Compare, Container>::adjacent_flat_map(adjacent_flat_map&& other) noexcept
 	: key_compare{ std::move(other.get_less()) }
 	, m_key_value_pairs{ std::move(other.m_key_value_pairs) }
 { }
@@ -1104,15 +1108,59 @@ auto adjacent_flat_map<Key, T, Compare, Container>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
 	using std::get;
-	if constexpr (sizeof...(args) == 2)
+	// std::pair has the following constructors:
+	//	1. Default: pair()
+	//	2. Copy: pair(const pair&)
+	//	3. Move: pair(pair&&)
+	//	4. First & second copy: pair(const T1&, const T2&)
+	//	5. First & second forward: pair(U1&&, U2&&)
+	//	6. Template copy: pair(const pair<U1, U2>&)
+	//	7. Template move: pair(pair<U1, U2>&&)
+	//	8. Template copy rvalue: pair(const pair<U1, U2>&&)
+	//	9. Piecewise: pair(std::piecewise_construct_t, std::tuple first, std::tuple second)
+	if constexpr (sizeof...(args) == 0)
 	{
-		// If possible, keep emplace a transparent operation.
-		return this->do_transparent_emplace_if_unique(std::forward<Args>(args)...);
+		// Handle default construction (#1).
+		return this->do_emplace_if_unique(key_type{});
+	}
+	else if constexpr (sizeof...(args) == 1)
+	{
+		if constexpr (std::is_convertible_v<std::add_pointer_t<Args&&>..., value_type*>
+			&& std::is_rvalue_reference_v<Args&&...>)
+		{
+			// Handle forwarding an r-value pair that is or is like value_type (#3).
+			value_type&& value = (static_cast<value_type&&>(args), ...);
+			return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		}
+		else if constexpr (std::is_convertible_v<std::add_pointer_t<Args&&>..., const value_type*>)
+		{
+			// Handle an l-value pair that is or is like value_type (#2).
+			const value_type& value = (static_cast<const value_type&>(args), ...);
+			return this->do_emplace_if_unique(get<0>(value), get<1>(value));
+		}
+		else if (flat::has_conversion_operator_v<Args&&..., value_type&> || flat::has_conversion_operator_v<Args&&..., const value_type&>)
+		{
+			// Unwrap std::reference_wrapper and similar with conversion operators to value_type (none of the above).
+			const value_type& value{ args... };
+			return this->do_emplace_if_unique(get<0>(value), get<1>(value));
+		}
+		else
+		{
+			// Handle other construction such as copies from convertible but different types (#6, #7, #8).
+			value_type value(std::forward<Args>(args)...);
+			return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		}
+	}
+	else if constexpr (sizeof...(args) == 2)
+	{
+		// Handle construction of first & second copy/move (#4, #5).
+		return this->do_emplace_if_unique(std::forward<Args>(args)...);
 	}
 	else
 	{
+		// Handle other construction such as with piecewise_construct_t (#9).
 		value_type value(std::forward<Args>(args)...);
-		return this->do_transparent_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
 template <typename Key, typename T, typename Compare, typename Container>
@@ -1467,6 +1515,20 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_lower_bound(const K& key_
 	return lower_bound(first, last, key_arg, key_value_compare{ this->get_less() });
 }
 template <typename Key, typename T, typename Compare, typename Container>
+template <typename... Args>
+auto adjacent_flat_map<Key, T, Compare, Container>::do_emplace_if_unique(const key_type& key_arg, Args&&... args)
+	-> std::pair<iterator, bool>
+{
+	return this->do_transparent_emplace_if_unique(key_arg, std::forward<Args>(args)...);
+}
+template <typename Key, typename T, typename Compare, typename Container>
+template <typename... Args>
+auto adjacent_flat_map<Key, T, Compare, Container>::do_emplace_if_unique(key_type&& key_arg, Args&&... args)
+	-> std::pair<iterator, bool>
+{
+	return this->do_transparent_emplace_if_unique(std::move(key_arg), std::forward<Args>(args)...);
+}
+template <typename Key, typename T, typename Compare, typename Container>
 template <typename K, typename... Args>
 auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_if_unique(K&& key_arg, Args&&... args)
 	-> std::pair<iterator, bool>
@@ -1477,7 +1539,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_if_un
 	const bool emplaced = iter.get() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter));
 	if (emplaced)
 	{
-		iter = iterator{ m_key_value_pairs.emplace(iter.get(), std::forward<K>(key_arg), std::forward<Args>(args)...) };
+		iter = iterator{ m_key_value_pairs.emplace(iter.get(), std::forward<K>(key_arg), mapped_type(std::forward<Args>(args)...)) };
 	}
 	return { iter, emplaced };
 }

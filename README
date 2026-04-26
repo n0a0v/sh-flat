@@ -2,9 +2,9 @@ See LICENSE for copyright details.
 
 This implementation requires a C++17 compliant compiler and has been tested
 with:
-	* g++ 12
-	* clang 15
-	* MSVC 2022 (17.11.3)
+	* g++ 13
+	* clang 18
+	* MSVC 2022 (17.14.29)
 
 CMake & binaries are setup for unit testing and benchmarking. Only the headers
 in the "sh" directory are necessary to use the various flat map & set

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<Type Name="sh::flat_map&lt;*,*&gt;">
+		<AlternativeType Name="sh::unordered_flat_map&lt;*,*&gt;" />
+		<Intrinsic Name="size" Expression="m_keys.size()" />
+		<Intrinsic Name="get_key" Expression="m_keys[index]">
+			<Parameter Name="index" Type="size_t" />
+		</Intrinsic>
+		<Intrinsic Name="get_value" Expression="m_values[index]">
+			<Parameter Name="index" Type="size_t" />
+		</Intrinsic>
+		<DisplayString>{{ size={size()} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]">size()</Item>
+			<CustomListItems>
+				<Variable Name="index" InitialValue="0" />
+				<Size>size()</Size>
+				<Loop>
+					<Item Name="[{get_key(index)}]">get_value(index)</Item>
+					<Exec>++index</Exec>
+				</Loop>
+			</CustomListItems>
+		</Expand>
+	</Type>
+	<Type Name="sh::adjacent_flat_map&lt;*,*&gt;">
+		<AlternativeType Name="sh::unordered_adjacent_flat_map&lt;*,*&gt;" />
+		<Intrinsic Name="size" Expression="m_key_value_pairs.size()" />
+		<Intrinsic Name="get_key" Expression="m_key_value_pairs[index].first">
+			<Parameter Name="index" Type="size_t" />
+		</Intrinsic>
+		<Intrinsic Name="get_value" Expression="m_key_value_pairs[index].second">
+			<Parameter Name="index" Type="size_t" />
+		</Intrinsic>
+		<DisplayString>{{ size={size()} }}</DisplayString>
+		<Expand>
+			<Item Name="[size]">size()</Item>
+			<CustomListItems>
+				<Variable Name="index" InitialValue="0" />
+				<Size>size()</Size>
+				<Loop>
+					<Item Name="[{get_key(index)}]">get_value(index)</Item>
+					<Exec>++index</Exec>
+				</Loop>
+			</CustomListItems>
+		</Expand>
+	</Type>
+</AutoVisualizer>

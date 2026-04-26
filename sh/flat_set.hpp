@@ -76,7 +76,7 @@ public:
 	flat_set(
 		const flat_set& other,
 		const Allocator& alloc);
-	flat_set(flat_set&& other);
+	flat_set(flat_set&& other) noexcept;
 	template <typename Allocator,
 		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<container_type, Allocator>>
 	>
@@ -361,7 +361,7 @@ flat_set<Key, Compare, KeyContainer>::flat_set(const flat_set& other, const Allo
 	, m_keys{ other.m_keys, alloc }
 { }
 template <typename Key, typename Compare, typename KeyContainer>
-flat_set<Key, Compare, KeyContainer>::flat_set(flat_set&& other)
+flat_set<Key, Compare, KeyContainer>::flat_set(flat_set&& other) noexcept
 	: key_compare{ std::move(other.get_less()) }
 	, m_keys{ std::move(other.m_keys) }
 { }

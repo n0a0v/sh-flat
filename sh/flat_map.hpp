@@ -100,7 +100,7 @@ public:
 	flat_map(
 		const flat_map& other,
 		const Allocator& alloc);
-	flat_map(flat_map&& other);
+	flat_map(flat_map&& other) noexcept;
 	template <typename Allocator,
 		typename UsesAllocator = std::enable_if_t<std::uses_allocator_v<key_container_type, Allocator> && std::uses_allocator_v<mapped_container_type, Allocator>>
 	>
@@ -413,6 +413,10 @@ private:
 	KeyIterator do_lower_bound(const key_type& key_arg, const KeyIterator first, const KeyIterator last) const;
 	template <typename K, typename KeyIterator, typename C = key_compare, typename IsTransparent = typename C::is_transparent>
 	KeyIterator do_lower_bound(const K& key_arg, const KeyIterator first, const KeyIterator last) const;
+	template <typename... Args>
+	std::pair<iterator, bool> do_emplace_if_unique(const key_type& key_arg, Args&&... args);
+	template <typename... Args>
+	std::pair<iterator, bool> do_emplace_if_unique(key_type&& key_arg, Args&&... args);
 	template <typename K, typename... Args>
 	std::pair<iterator, bool> do_transparent_emplace_if_unique(K&& key_arg, Args&&... args);
 	template <typename K, typename... Args>
@@ -449,7 +453,7 @@ flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(const flat_ma
 	, m_values{ other.m_values, alloc }
 { }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
-flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(flat_map&& other)
+flat_map<Key, T, Compare, KeyContainer, MappedContainer>::flat_map(flat_map&& other) noexcept
 	: key_compare{ std::move(other.get_less()) }
 	, m_keys{ std::move(other.m_keys) }
 	, m_values{ std::move(other.m_values) }
@@ -1164,30 +1168,60 @@ template <typename... Args, typename IsConstructible>
 auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::emplace(Args&&... args)
 	-> std::pair<iterator, bool>
 {
-	// If possible, keep emplace a transparent operation.
-	if constexpr (sizeof...(args) == 2)
+	using std::get;
+	// std::pair has the following constructors:
+	//	1. Default: pair()
+	//	2. Copy: pair(const pair&)
+	//	3. Move: pair(pair&&)
+	//	4. First & second copy: pair(const T1&, const T2&)
+	//	5. First & second forward: pair(U1&&, U2&&)
+	//	6. Template copy: pair(const pair<U1, U2>&)
+	//	7. Template move: pair(pair<U1, U2>&&)
+	//	8. Template copy rvalue: pair(const pair<U1, U2>&&)
+	//	9. Piecewise: pair(std::piecewise_construct_t, std::tuple first, std::tuple second)
+	if constexpr (sizeof...(args) == 0)
 	{
-		return this->do_transparent_emplace_if_unique(std::forward<Args>(args)...);
+		// Handle default construction (#1).
+		return this->do_emplace_if_unique(key_type{});
+	}
+	else if constexpr (sizeof...(args) == 1)
+	{
+		if constexpr (std::is_convertible_v<std::add_pointer_t<Args&&>..., value_type*>
+			&& std::is_rvalue_reference_v<Args&&...>)
+		{
+			// Handle forwarding an r-value pair that is or is like value_type (#3).
+			value_type&& value = (static_cast<value_type&&>(args), ...);
+			return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		}
+		else if constexpr (std::is_convertible_v<std::add_pointer_t<Args&&>..., const value_type*>)
+		{
+			// Handle an l-value pair that is or is like value_type (#2).
+			const value_type& value = (static_cast<const value_type&>(args), ...);
+			return this->do_emplace_if_unique(get<0>(value), get<1>(value));
+		}
+		else if (flat::has_conversion_operator_v<Args&&..., value_type&> || flat::has_conversion_operator_v<Args&&..., const value_type&>)
+		{
+			// Unwrap std::reference_wrapper and similar with conversion operators to value_type (none of the above).
+			const value_type& value{ args... };
+			return this->do_emplace_if_unique(get<0>(value), get<1>(value));
+		}
+		else
+		{
+			// Handle other construction such as copies from convertible but different types (#6, #7, #8).
+			value_type value(std::forward<Args>(args)...);
+			return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		}
+	}
+	else if constexpr (sizeof...(args) == 2)
+	{
+		// Handle construction of first & second copy/move (#4, #5).
+		return this->do_emplace_if_unique(std::forward<Args>(args)...);
 	}
 	else
 	{
-		using std::get;
-		if constexpr (sizeof...(args) == 1)
-		{
-			if constexpr (std::is_convertible_v<Args&&..., value_type&&>)
-			{
-				return this->do_transparent_emplace_if_unique(std::move(get<0>(args...)), std::move(get<1>(args...)));
-			}
-			else if constexpr (std::is_convertible_v<Args&&..., const value_type&>)
-			{
-				// Collapse reference_wrapper (or similar) into value_type&.
-				const value_type& value{ args... };
-				return this->do_transparent_emplace_if_unique(get<0>(value), get<1>(value));
-			}
-		}
-		// Handle any other possible value_type construction (e.g., piecewise_construct):
+		// Handle other construction such as with piecewise_construct_t (#9).
 		value_type value(std::forward<Args>(args)...);
-		return this->do_transparent_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
+		return this->do_emplace_if_unique(get<0>(std::move(value)), get<1>(std::move(value)));
 	}
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
@@ -1550,6 +1584,20 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_lower_bound(co
 {
 	using std::lower_bound;
 	return lower_bound(first, last, key_arg, this->get_less());
+}
+template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
+template <typename... Args>
+auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_emplace_if_unique(const key_type& key_arg, Args&&... args)
+	-> std::pair<iterator, bool>
+{
+	return this->do_transparent_emplace_if_unique(key_arg, std::forward<Args>(args)...);
+}
+template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
+template <typename... Args>
+auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_emplace_if_unique(key_type&& key_arg, Args&&... args)
+	-> std::pair<iterator, bool>
+{
+	return this->do_transparent_emplace_if_unique(std::move(key_arg), std::forward<Args>(args)...);
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename K, typename... Args>

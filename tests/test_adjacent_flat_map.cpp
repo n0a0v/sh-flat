@@ -893,6 +893,8 @@ TEST(sh_adjacent_flat_map, emplace)
 {
 	using std::get;
 	adjacent_flat_map<int, std::string> x;
+
+	// Test non-overwrite:
 	{
 		const auto it = x.emplace(1, "one");
 		EXPECT_TRUE(it.second);
@@ -900,14 +902,101 @@ TEST(sh_adjacent_flat_map, emplace)
 		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	{
-		const auto it = x.emplace(1, "one!");
+		const auto it = x.emplace(1, "two");
 		EXPECT_FALSE(it.second);
 		EXPECT_EQ(get<0>(*it.first), 1);
 		EXPECT_EQ(get<1>(*it.first), "one");
 	}
 	ASSERT_EQ(x.size(), 1u);
+
+	// Test empty args:
+	{
+		const auto it = x.emplace();
+		EXPECT_TRUE(it.second);
+		EXPECT_EQ(get<0>(*it.first), int{});
+		EXPECT_EQ(get<1>(*it.first), std::string{});
+	}
+	// Test std::pair l-value:
+	{
+		const std::pair<int, std::string> v{ 2, "two" };
+		const auto it = x.emplace(v);
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test std::pair r-value:
+	{
+		const std::pair<int, std::string> v{ 3, "three" };
+		const auto it = x.emplace(std::pair<int, std::string>{ v });
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test std::pair const r-value:
+	{
+		const std::pair<int, std::string> v{ 3, "three" };
+		const auto it = x.emplace(static_cast<const std::pair<int, std::string>&&>(v));
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test first & second l-value:
+	{
+		const int key = 4;
+		const std::string value = "four";
+		const auto it = x.emplace(key, value);
+		EXPECT_EQ(get<0>(*it.first), key);
+		EXPECT_EQ(get<1>(*it.first), value);
+	}
+	// Test first & second r-value:
+	{
+		const int key = 5;
+		const std::string value = "five";
+		const auto it = x.emplace(int{ key }, std::string{ value });
+		EXPECT_EQ(get<0>(*it.first), key);
+		EXPECT_EQ(get<1>(*it.first), value);
+	}
+	// Test convertible std::pair l-value:
+	{
+		const std::pair<short, const char*> v{ 6, "six" };
+		const auto it = x.emplace(v);
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test convertible std::pair r-value:
+	{
+		const std::pair<short, const char*> v{ 7, "seven" };
+		const auto it = x.emplace(std::pair<short, const char*>{ v });
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test convertible std::pair const r-value:
+	{
+		const std::pair<short, const char*> v{ 8, "eight" };
+		const auto it = x.emplace(static_cast<const std::pair<short, const char*>&&>(v));
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test reference_wrapper l-value:
+	{
+		const std::pair<int, std::string> v{ 90, "ninety" };
+		const auto r = std::ref(v);
+		const auto it = x.emplace(r);
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test reference_wrapper r-value:
+	{
+		const std::pair<int, std::string> v{ 90, "ninety" };
+		const auto it = x.emplace(std::ref(v));
+		EXPECT_EQ(get<0>(*it.first), v.first);
+		EXPECT_EQ(get<1>(*it.first), v.second);
+	}
+	// Test piecewise_construct:
+	{
+		const auto it = x.emplace(std::piecewise_construct, std::tuple{ 91 }, std::tuple{ 9, '9' });
+		EXPECT_EQ(get<0>(*it.first), 91);
+		EXPECT_EQ(get<1>(*it.first), "999999999");
+	}
 }
-TEST(sh_adjacent_flat_map, emplace_transparent)
+TEST(sh_adjacent_flat_map, emplace_not_transparent)
 {
 	std::uint32_t compared_normally = 0, compared_transparently = 0;
 	adjacent_flat_map<std::string, int, less_transparent<std::string>> x
@@ -920,9 +1009,9 @@ TEST(sh_adjacent_flat_map, emplace_transparent)
 	EXPECT_EQ(compared_transparently, 0u);
 
 	x.emplace("1", 200);
-	EXPECT_EQ(compared_normally, 0u);
-	EXPECT_GE(compared_transparently, 1u);
-	compared_transparently = 0;
+	EXPECT_GE(compared_normally, 1u);
+	EXPECT_EQ(compared_transparently, 0u);
+	compared_normally = 0;
 
 	x.emplace(std::string{ "1" }, 200);
 	EXPECT_GE(compared_normally, 1u);
