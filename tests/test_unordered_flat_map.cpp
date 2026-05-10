@@ -73,6 +73,27 @@ namespace
 		std::uint32_t* m_compared_normally;
 		std::uint32_t* m_compared_transparently;
 	};
+
+	struct throwy_exception {};
+
+	template <typename T>
+	struct throwy
+	{
+		T m_value{};
+
+		friend bool operator<(const T& l, const throwy& r)
+		{
+			return l < r.m_value;
+		}
+		friend bool operator<(const throwy& l, const T& r)
+		{
+			return l.m_value < r;
+		}
+		operator T() const
+		{
+			throw throwy_exception{};
+		}
+	};
 } // anonymous namespace
 
 TEST(sh_unordered_flat_map, ctor_default)
@@ -1053,22 +1074,123 @@ TEST(sh_unordered_flat_map, try_emplace_transparent)
 	x.try_emplace(static_cast<unsigned short>(2), 200);
 	EXPECT_GE(compared_transparently, 1u);
 }
+TEST(sh_unordered_flat_map, try_emplace_throw)
+{
+	unordered_flat_map<int, std::string, std::equal_to<void>> x{
+		unsorted_unique,
+		{ {1, "one"}, {2, "two"}, {4, "four"} }
+	};
+	EXPECT_THROW(
+		x.try_emplace(throwy<int>{ 3 }, "three");
+		, throwy_exception
+	);
+	ASSERT_EQ(3u, x.size());
+	ASSERT_EQ(3u, x.keys().size());
+	ASSERT_EQ(3u, x.values().size());
+	ASSERT_EQ(x.at(1), "one");
+	ASSERT_EQ(x.at(2), "two");
+	ASSERT_EQ(x.at(4), "four");
+	EXPECT_THROW(
+		x.try_emplace(3, throwy<std::string>{ "three" });
+		, throwy_exception
+	);
+	ASSERT_EQ(3u, x.size());
+	ASSERT_EQ(3u, x.keys().size());
+	ASSERT_EQ(3u, x.values().size());
+	ASSERT_EQ(x.at(1), "one");
+	ASSERT_EQ(x.at(2), "two");
+	ASSERT_EQ(x.at(4), "four");
+}
 TEST(sh_unordered_flat_map, try_emplace_hint)
 {
 	using std::get;
-	unordered_flat_map<int, std::string> x;
-
-	const auto hint = x.try_emplace(1, "one");
-	ASSERT_TRUE(hint.second);
-	EXPECT_EQ(get<0>(*hint.first), 1);
-	EXPECT_EQ(get<1>(*hint.first), "one");
-
+	unordered_flat_map<std::string, int> x;
 	{
-		const auto it = x.try_emplace(hint.first, 2, "two");
-		EXPECT_EQ(get<0>(*it), 2);
-		EXPECT_EQ(get<1>(*it), "two");
+		// incorrect hint (too early)
+		const auto it = x.try_emplace(x.begin(), "a", 1);
+		EXPECT_EQ(get<0>(*it), "a");
+		EXPECT_EQ(get<1>(*it), 1);
+		EXPECT_EQ(x.size(), 1u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1} }));
 	}
-	ASSERT_EQ(x.size(), 2u);
+	{
+		const auto it = x.try_emplace(x.end(), "a", 2);
+		EXPECT_EQ(get<0>(*it), "a");
+		EXPECT_EQ(get<1>(*it), 1);
+		EXPECT_EQ(x.size(), 1u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1} }));
+	}
+	{
+		// incorrect hint (too early)
+		const auto it = x.try_emplace(x.begin(), "e", 5);
+		EXPECT_EQ(get<0>(*it), "e");
+		EXPECT_EQ(get<1>(*it), 5);
+		EXPECT_EQ(x.size(), 2u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"e",5} }));
+	}
+	{
+		const auto it = x.try_emplace(x.find("e"), "b", 2);
+		EXPECT_EQ(get<0>(*it), "b");
+		EXPECT_EQ(get<1>(*it), 2);
+		EXPECT_EQ(x.size(), 3u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"e",5} }));
+	}
+	{
+		// incorrect hint (too late)
+		const auto it = x.try_emplace(x.end(), "d", 4);
+		EXPECT_EQ(get<0>(*it), "d");
+		EXPECT_EQ(get<1>(*it), 4);
+		EXPECT_EQ(x.size(), 4u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"d",4}, {"e",5} }));
+	}
+	{
+		const auto it = x.try_emplace(x.find("d"), "c", 3);
+		EXPECT_EQ(get<0>(*it), "c");
+		EXPECT_EQ(get<1>(*it), 3);
+		EXPECT_EQ(x.size(), 5u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5} }));
+	}
+	{
+		const auto it = x.try_emplace(x.end(), "f", 6);
+		EXPECT_EQ(get<0>(*it), "f");
+		EXPECT_EQ(get<1>(*it), 6);
+		EXPECT_EQ(x.size(), 6u);
+		EXPECT_EQ(x, (decltype(x){ {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5}, {"f",6} }));
+	}
+	{
+		const auto it = x.try_emplace(x.begin(), "9", 0);
+		EXPECT_EQ(get<0>(*it), "9");
+		EXPECT_EQ(get<1>(*it), 0);
+		EXPECT_EQ(x.size(), 7u);
+		EXPECT_EQ(x, (decltype(x){ {"9",0}, {"a",1}, {"b",2}, {"c",3}, {"d",4}, {"e",5}, {"f",6} }));
+	}
+}
+TEST(sh_unordered_flat_map, try_emplace_hint_throw)
+{
+	unordered_flat_map<int, std::string, std::equal_to<void>> x{
+		unsorted_unique,
+		{ {1, "one"}, {2, "two"}, {4, "four"} }
+	};
+	EXPECT_THROW(
+		x.try_emplace(x.find(2), throwy<int>{ 3 }, "three");
+		, throwy_exception
+	);
+	ASSERT_EQ(3u, x.size());
+	ASSERT_EQ(3u, x.keys().size());
+	ASSERT_EQ(3u, x.values().size());
+	ASSERT_EQ(x.at(1), "one");
+	ASSERT_EQ(x.at(2), "two");
+	ASSERT_EQ(x.at(4), "four");
+	EXPECT_THROW(
+		x.try_emplace(x.find(2), 3, throwy<std::string>{ "three" });
+		, throwy_exception
+	);
+	ASSERT_EQ(3u, x.size());
+	ASSERT_EQ(3u, x.keys().size());
+	ASSERT_EQ(3u, x.values().size());
+	ASSERT_EQ(x.at(1), "one");
+	ASSERT_EQ(x.at(2), "two");
+	ASSERT_EQ(x.at(4), "four");
 }
 TEST(sh_unordered_flat_map, erase)
 {

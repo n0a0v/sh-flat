@@ -1513,14 +1513,28 @@ auto unordered_flat_map<Key, T, KeyEqual, KeyContainer, MappedContainer>::do_tra
 	using std::get;
 	using std::end;
 	using std::prev;
-	if (get<0>(iter) == end(m_keys))
+	if (get<0>(iter) != end(m_keys))
 	{
-		// Desynchronization occurs if m_keys emplaces but m_values throws.
-		m_keys.emplace_back(std::forward<K>(key_arg));
-		m_values.emplace_back(std::forward<Args>(args)...);
-		return { iterator{ prev(end(m_keys)), prev(end(m_values)) }, true };
+		return { iter, false };
 	}
-	return { iter, false };
+	if constexpr (std::is_nothrow_constructible_v<mapped_type, Args...>)
+	{
+		m_keys.emplace_back(std::forward<K>(key_arg));
+		flat::scope_guard guard{ [&]() noexcept { m_keys.pop_back(); } };
+		m_values.emplace_back(std::forward<Args>(args)...);
+		guard.disarm();
+	}
+	else
+	{
+		// Construct value before insertion. As its construction may throw, best
+		// to do that before mutating the key container.
+		mapped_type value(std::forward<Args>(args)...);
+		m_keys.emplace_back(std::forward<K>(key_arg));
+		flat::scope_guard guard{ [&]() noexcept { m_keys.pop_back(); } };
+		m_values.emplace_back(std::move(value));
+		guard.disarm();
+	}
+	return { iterator{ prev(end(m_keys)), prev(end(m_values)) }, true };
 }
 
 template <typename Key, typename T, typename KeyEqual, typename KeyContainer, typename MappedContainer>

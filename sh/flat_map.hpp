@@ -1607,49 +1607,71 @@ auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_em
 	using std::end;
 	using std::get;
 	const iterator iter = this->lower_bound(key_arg);
-	if (get<0>(iter) == end(m_keys) || this->get_less()(key_arg, get<0>(*iter)))
+	// If the less-than predicate fails, we know key_arg is equivalent to iter's key.
+	if (get<0>(iter) != end(m_keys) && false == this->get_less()(key_arg, get<0>(*iter)))
 	{
-		// Desynchronization occurs if m_keys emplaces but m_values throws.
+		// Found existing element matching key.
+		return { iter, false };
+	}
+	if constexpr (std::is_nothrow_constructible_v<mapped_type, Args...>)
+	{
 		const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(get<0>(iter), std::forward<K>(key_arg));
+		flat::scope_guard guard{ [&]() noexcept { m_keys.erase(key_iter); } };
 		const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(get<1>(iter), std::forward<Args>(args)...);
+		guard.disarm();
 		return { iterator{ key_iter, value_iter }, true };
 	}
-	return { iter, false };
+	else
+	{
+		// Construct value before insertion. As its construction may throw, best
+		// to do that before mutating the key container.
+		mapped_type value(std::forward<Args>(args)...);
+		const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(get<0>(iter), std::forward<K>(key_arg));
+		flat::scope_guard guard{ [&]() noexcept { m_keys.erase(key_iter); } };
+		const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(get<1>(iter), std::move(value));
+		guard.disarm();
+		return { iterator{ key_iter, value_iter }, true };
+	}
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>
 template <typename K, typename... Args>
-auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_emplace_hint_if_unique(const const_iterator hint, K&& key_arg, Args&&... args)
+auto flat_map<Key, T, Compare, KeyContainer, MappedContainer>::do_transparent_emplace_hint_if_unique(const_iterator hint, K&& key_arg, Args&&... args)
 	-> iterator
 {
 	using std::begin;
 	using std::end;
 	using std::get;
 	using std::prev;
-	if (m_keys.empty() == false)
+	const flat::iterator_t<const key_container_type> key_hint = get<0>(hint);
+	const key_compare& less = this->get_less();
+	const bool hint_valid =
+		(key_hint == begin(m_keys) || less(*prev(key_hint), key_arg))
+		&& (key_hint == end(m_keys) || less(key_arg, *key_hint))
+	;
+	if (hint_valid)
 	{
-		const flat::iterator_t<const key_container_type> key_hint = get<0>(hint);
-		const key_compare& less = this->get_less();
-		if (key_hint == end(m_keys) && less(m_keys.back(), key_arg))
+		const flat::iterator_t<const mapped_container_type> value_hint = get<1>(hint);
+		if constexpr (std::is_nothrow_constructible_v<mapped_type, Args...>)
 		{
-			// Hint is at the end and the back is less than the given key.
-			const flat::iterator_t<const mapped_container_type> value_hint = get<1>(hint);
-			// Desynchronization occurs if m_keys emplaces but m_values throws.
 			const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
+			flat::scope_guard guard{ [&]() noexcept { m_keys.erase(key_iter); } };
 			const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			guard.disarm();
 			return iterator{ key_iter, value_iter };
 		}
-		else if ((key_hint == begin(m_keys) || less(*prev(key_hint), key_arg))
-			&& less(key_arg, *key_hint))
+		else
 		{
-			// Hint is at the end and the back is less than the given key.
-			const flat::iterator_t<const mapped_container_type> value_hint = get<1>(hint);
-			// Desynchronization occurs if m_keys emplaces but m_values throws.
+			// Construct value before insertion. As its construction may throw, best
+			// to do that before mutating the key container.
+			mapped_type value(std::forward<Args>(args)...);
 			const flat::iterator_t<key_container_type> key_iter = m_keys.emplace(key_hint, std::forward<K>(key_arg));
-			const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(value_hint, std::forward<Args>(args)...);
+			flat::scope_guard guard{ [&]() noexcept { m_keys.erase(key_iter); } };
+			const flat::iterator_t<mapped_container_type> value_iter = m_values.emplace(value_hint, std::move(value));
+			guard.disarm();
 			return iterator{ key_iter, value_iter };
 		}
 	}
-	// Fallback to binary search emplacement.
+	// Fallback to do_transparent_emplace_if_unique.
 	return this->do_transparent_emplace_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename Compare, typename KeyContainer, typename MappedContainer>

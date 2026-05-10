@@ -34,6 +34,7 @@
 
 #include <cassert>
 #include <cstddef>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <type_traits>
@@ -41,6 +42,8 @@
 
 #if !defined(SH_FLAT_ASSERT)
 	/**	Transparently wraps assert to allow asserts to be turned off for the sh flat_map/set-style containers in one location, if too costly.
+	 *	@param CONDITION An expression that evaluates to true or false when NDEBUG is not defined.
+	 *	@param __VA_ARGS__ Additional arguments to describe the assertation.
 	 */
 	#define SH_FLAT_ASSERT(CONDITION, ...) \
 		/* Comment: __VA_ARGS__ */ \
@@ -198,6 +201,10 @@ namespace sh::flat
 		return last;
 	}
 
+	/**	A wrapper of a std::pair of two l-value references with support for swap.
+	 *	@tparam T1 The type of first.
+	 *	@tparam T2 The type of second.
+	 */
 	template <typename T1, typename T2>
 	class reference_pair final : public std::pair<std::add_lvalue_reference_t<T1>, std::add_lvalue_reference_t<T2>>
 	{
@@ -262,6 +269,10 @@ namespace sh::flat
 	template <typename T1, typename T2>
 	reference_pair(T1&, T2&) -> reference_pair<T1, T2>;
 
+	/**	A wrapper of two iterators that presents as a std::pair of values or references.
+	 *	@tparam I1 The iterator type that becomes the value and reference first.
+	 *	@tparam I2 The iterator type that becomes the value and reference second.
+	 */
 	template <typename I1, typename I2>
 	class iterator_pair final
 	{
@@ -274,6 +285,8 @@ namespace sh::flat
 		using reference = reference_pair<
 			typename std::iterator_traits<I1>::reference,
 			typename std::iterator_traits<I2>::reference>;
+		/**	Proxy pointer-like type.
+		 */
 		struct pointer final
 		{
 			reference m_reference;
@@ -418,6 +431,8 @@ namespace sh::flat
 		template <typename J1, typename J2>
 		friend class iterator_pair;
 
+		/**	The pair of wrapped iterators.
+		 */
 		iterator_pair_type m_iterators;
 	};
 
@@ -446,6 +461,11 @@ namespace sh::flat
 		return get<I>(iter.m_iterators);
 	}
 
+	/**	A wrapper of an iterator that optionally enforces a different presention of value and reference.
+	 *	@tparam I The type of the wrapper iterator.
+	 *	@tparam V The value_type.
+	 *	@tparam R The reference type.
+	 */
 	template <typename I,
 		typename V = typename std::iterator_traits<I>::value_type,
 		typename R = typename std::iterator_traits<I>::reference
@@ -572,7 +592,10 @@ namespace sh::flat
 			swap(lhs.m_iterator, rhs.m_iterator);
 		}
 
-		constexpr const iterator_type& get() const
+		/**	Access the wrapped iterator.
+		 *	@return The wrapper or base iterator.
+		 */
+		constexpr const iterator_type& base() const
 		{
 			return m_iterator;
 		}
@@ -581,7 +604,49 @@ namespace sh::flat
 		template <typename I2, typename V2, typename R2>
 		friend class iterator_wrapper;
 
+		/**	The wrapped iterator.
+		 */
 		iterator_type m_iterator;
+	};
+
+	/**	A callable the will be invoked at destruction time unless disarmed.
+	 *	@tparam Callable The type of the callable.
+	 */
+	template <typename Callable>
+	class scope_guard final
+	{
+	public:
+		/**	Construct as armed with a given callable.
+		 *	@param on_destruct The callable to invoke if not disarmed.
+		 */
+		explicit scope_guard(Callable&& on_destruct) noexcept
+			: m_on_destruct{ std::move(on_destruct) }
+			, m_disarmed{ false }
+		{
+			static_assert(std::is_nothrow_move_constructible_v<Callable>);
+			static_assert(std::is_nothrow_invocable_v<Callable>);
+		}
+		/**	Destruct and call the given callable unless disarmed.
+		 */
+		~scope_guard() noexcept
+		{
+			if (m_disarmed == false)
+			{
+				std::invoke(m_on_destruct);
+			}
+		}
+		scope_guard(const scope_guard&) = delete;
+		scope_guard& operator=(const scope_guard&) = delete;
+		/**	Disarm the guard so that the callable is not invoked during destruction.
+		 */
+		void disarm() noexcept
+		{
+			m_disarmed = true;
+		}
+
+	private:
+		Callable m_on_destruct;
+		bool m_disarmed{ false };
 	};
 
 } // namespace sh::flat

@@ -776,9 +776,9 @@ auto adjacent_flat_map<Key, T, Compare, Container>::operator[](K&& key_arg)
 	using std::get;
 	using std::end;
 	iterator iter = this->lower_bound(key_arg);
-	if (iter.get() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter)))
+	if (iter.base() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter)))
 	{
-		iter = iterator{ m_key_value_pairs.emplace(iter.get(), std::forward<K>(key_arg), mapped_type{}) };
+		iter = iterator{ m_key_value_pairs.emplace(iter.base(), std::forward<K>(key_arg), mapped_type{}) };
 	}
 	return get<1>(*iter);
 }
@@ -1070,14 +1070,14 @@ auto adjacent_flat_map<Key, T, Compare, Container>::erase(const const_iterator p
 	-> iterator
 {
 	using std::get;
-	return iterator{ m_key_value_pairs.erase(pos.get()) };
+	return iterator{ m_key_value_pairs.erase(pos.base()) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
 auto adjacent_flat_map<Key, T, Compare, Container>::erase(const const_iterator first, const const_iterator last)
 	-> iterator
 {
 	using std::get;
-	return iterator{ m_key_value_pairs.erase(first.get(), last.get()) };
+	return iterator{ m_key_value_pairs.erase(first.base(), last.base()) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
 auto adjacent_flat_map<Key, T, Compare, Container>::erase(const key_type& key_arg)
@@ -1222,12 +1222,12 @@ auto adjacent_flat_map<Key, T, Compare, Container>::erase(const K& key_arg)
 {
 	using std::get;
 	using std::end;
-	const iterator it = this->find(key_arg);
-	if (it.get() == end(m_key_value_pairs))
+	const iterator iter = this->find(key_arg);
+	if (iter.base() == end(m_key_value_pairs))
 	{
 		return 0;
 	}
-	this->erase(it);
+	this->erase(iter);
 	return 1;
 }
 
@@ -1406,7 +1406,7 @@ auto adjacent_flat_map<Key, T, Compare, Container>::equal_range(const K& key_arg
 	using std::next;
 	using std::end;
 	const iterator iter = this->find(key_arg);
-	return { iter, iter.get() == end(m_key_value_pairs) ? iter : next(iter) };
+	return { iter, iter.base() == end(m_key_value_pairs) ? iter : next(iter) };
 }
 template <typename Key, typename T, typename Compare, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1536,10 +1536,10 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_if_un
 	using std::end;
 	using std::get;
 	iterator iter = this->lower_bound(key_arg);
-	const bool emplaced = iter.get() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter));
+	const bool emplaced = iter.base() == end(m_key_value_pairs) || this->get_less()(key_arg, get<0>(*iter));
 	if (emplaced)
 	{
-		iter = iterator{ m_key_value_pairs.emplace(iter.get(), std::forward<K>(key_arg), mapped_type(std::forward<Args>(args)...)) };
+		iter = iterator{ m_key_value_pairs.emplace(iter.base(), std::forward<K>(key_arg), mapped_type(std::forward<Args>(args)...)) };
 	}
 	return { iter, emplaced };
 }
@@ -1552,22 +1552,17 @@ auto adjacent_flat_map<Key, T, Compare, Container>::do_transparent_emplace_hint_
 	using std::end;
 	using std::get;
 	using std::prev;
-	if (m_key_value_pairs.empty() == false)
+	const key_compare& less = this->get_less();
+	const bool hint_valid =
+		(hint.base() == begin(m_key_value_pairs) || less(get<0>(*prev(hint)), key_arg))
+		&& (hint.base() == end(m_key_value_pairs) || less(key_arg, get<0>(*hint)))
+	;
+	if (hint_valid)
 	{
-		const key_compare& less = this->get_less();
-		if (hint.get() == end(m_key_value_pairs) && less(get<0>(m_key_value_pairs.back()), key_arg))
-		{
-			// Hint is at the end and the back is less than the given key.
-			return iterator{ m_key_value_pairs.emplace(hint.get(), std::forward<K>(key_arg), std::forward<Args>(args)...) };
-		}
-		else if ((hint.get() == begin(m_key_value_pairs) || less(get<0>(*prev(hint.get())), key_arg))
-			&& less(key_arg, get<0>(*hint.get())))
-		{
-			// Hint is at the end and the back is less than the given key.
-			return iterator{ m_key_value_pairs.emplace(hint.get(), std::forward<K>(key_arg), std::forward<Args>(args)...) };
-		}
+		// Hint is at the end and the back is less than the given key.
+		return iterator{ m_key_value_pairs.emplace(hint.base(), std::forward<K>(key_arg), std::forward<Args>(args)...) };
 	}
-	// Fallback to binary search emplacement.
+	// Fallback to do_transparent_emplace_if_unique.
 	return this->do_transparent_emplace_if_unique(std::forward<K>(key_arg), std::forward<Args>(args)...).first;
 }
 template <typename Key, typename T, typename Compare, typename Container>

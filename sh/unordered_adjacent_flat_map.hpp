@@ -687,7 +687,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::at(const K& key_a
 	const iterator iter = this->find(key_arg);
 	using std::end;
 	using std::get;
-	if (iter.get() == end(m_key_value_pairs))
+	if (iter.base() == end(m_key_value_pairs))
 	{
 		throw std::out_of_range{ "unordered_adjacent_flat_map::at" };
 	}
@@ -701,7 +701,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::at(const K& key_a
 	const const_iterator iter = find(key_arg);
 	using std::end;
 	using std::get;
-	if (iter.get() == end(m_key_value_pairs))
+	if (iter.base() == end(m_key_value_pairs))
 	{
 		throw std::out_of_range{ "unordered_adjacent_flat_map::at" };
 	}
@@ -992,7 +992,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const
 		using std::distance;
 		using std::end;
 		using std::next;
-		const difference_type pos_index{ distance(cbegin(m_key_value_pairs), pos.get()) };
+		const difference_type pos_index{ distance(cbegin(m_key_value_pairs), pos.base()) };
 		const flat::iterator_t<container_type> pos_iter = next(begin(m_key_value_pairs), pos_index);
 		if (next(pos_iter) != end(m_key_value_pairs))
 		{
@@ -1008,7 +1008,7 @@ template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const const_iterator first, const const_iterator last)
 	-> iterator
 {
-	return iterator{ m_key_value_pairs.erase(first.get(), last.get()) };
+	return iterator{ m_key_value_pairs.erase(first.base(), last.base()) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::erase(const key_type& key_arg)
@@ -1260,7 +1260,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::equal_range(const
 	using std::get;
 	using std::end;
 	using std::next;
-	return { iter, iter.get() == end(m_key_value_pairs) ? iter : next(iter) };
+	return { iter, iter.base() == end(m_key_value_pairs) ? iter : next(iter) };
 }
 template <typename Key, typename T, typename KeyEqual, typename Container>
 template <typename K, typename C, typename IsTransparent>
@@ -1385,7 +1385,7 @@ auto unordered_adjacent_flat_map<Key, T, KeyEqual, Container>::do_transparent_em
 	const iterator iter = this->find(key_arg);
 	using std::end;
 	using std::prev;
-	if (iter.get() == end(m_key_value_pairs))
+	if (iter.base() == end(m_key_value_pairs))
 	{
 		m_key_value_pairs.emplace_back(std::forward<K>(key_arg), mapped_type{ std::forward<Args>(args)... });
 		return { iterator{ prev(end(m_key_value_pairs)) }, true };
